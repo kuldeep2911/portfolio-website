@@ -58,6 +58,50 @@ export interface SocialLink {
 }
 
 // ─── Profile ─────────────────────────────────
+export interface OngoingProject {
+  id: string
+  title: string
+  icon: string
+  status: 'in_progress' | 'planning' | 'beta'
+  highlights: string[]
+}
+
+export const ongoing: OngoingProject[] = [
+  {
+    id: 'neural-arch',
+    title: 'Neural Architecture Search',
+    icon: 'Network',
+    status: 'in_progress',
+    highlights: [
+      'Automated discovery of optimal network topologies.',
+      'Hardware-aware latency constraints.',
+      'Multi-objective evolutionary algorithms.'
+    ]
+  },
+  {
+    id: 'agentic-workflows',
+    title: 'Agentic Workflows',
+    icon: 'Bot',
+    status: 'in_progress',
+    highlights: [
+      'Autonomous agents for data preparation and feature engineering.',
+      'Self-healing data pipelines.',
+      'Integration with LangChain and LlamaIndex.'
+    ]
+  },
+  {
+    id: 'edge-inference',
+    title: 'Edge Inference Engine',
+    icon: 'Cpu',
+    status: 'planning',
+    highlights: [
+      'Real-time model quantization and pruning.',
+      'Optimized for Apple Silicon and NVIDIA Jetson.',
+      'Sub-10ms latency for vision tasks.'
+    ]
+  }
+]
+
 export const profile = {
   name: 'Kuldeep Kumar',
   title: 'AI/ML Engineer',
