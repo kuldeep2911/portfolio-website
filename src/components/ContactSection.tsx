@@ -196,7 +196,7 @@ export default function ContactSection() {
               transition: 'opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s',
             }}
           >
-            "I'll make sure Kuldeep reads your message first."
+            "{profile?.contact_text || "I'll make sure Kuldeep reads your message first."}"
           </div>
 
           <div style={{ 
