@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './styles/globals.css'
 import HeroSection from './components/HeroSection'
 import Navbar from './components/Navbar'
@@ -8,8 +9,9 @@ import ProjectsSection from './components/ProjectsSection'
 import SkillsSection from './components/SkillsSection'
 import OngoingSection from './components/OngoingSection'
 import ContactSection from './components/ContactSection'
+import AdminPage from './pages/AdminPage'
 
-export default function App() {
+function Portfolio() {
   const [scrollY, setScrollY] = useState(0)
 
   useEffect(() => {
@@ -52,5 +54,16 @@ export default function App() {
         <ContactSection />
       </div>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Portfolio />} />
+        <Route path="/admin" element={<AdminPage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }

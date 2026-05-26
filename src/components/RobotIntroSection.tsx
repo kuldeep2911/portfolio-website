@@ -1,23 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-
-const LINES = [
-  "Oh hey — you must be here to learn about Kuldeep.",
-  "He's a third-year AI & ML engineer at Manipal University — GPA 8.56, published researcher, and patent holder.",
-  "He builds things that think: LLMs, RAG systems, neural networks. The kind of work that gets noticed."
-]
+import Starfield from './Starfield'
+import { usePortfolioData } from '../data/usePortfolioData'
 
 
 
-function SpeechBubble({ isVisible }: { isVisible: boolean }) {
+function SpeechBubble({ isVisible, lines }: { isVisible: boolean; lines: string[] }) {
   const [currentLineIdx, setCurrentLineIdx] = useState(0)
   const [currentCharIdx, setCurrentCharIdx] = useState(0)
 
   useEffect(() => {
     if (!isVisible) return
 
-    if (currentLineIdx >= LINES.length) return // All done
+    if (currentLineIdx >= lines.length) return // All done
 
-    const currentLineText = LINES[currentLineIdx]
+    const currentLineText = lines[currentLineIdx]
 
     if (currentCharIdx < currentLineText.length) {
       // Type next character
@@ -88,7 +84,7 @@ function SpeechBubble({ isVisible }: { isVisible: boolean }) {
           />
         </div>
 
-        {LINES.map((line, idx) => {
+        {lines.map((line, idx) => {
           // If we haven't reached this line yet, don't render it at all
           if (idx > currentLineIdx) return null
 
@@ -114,7 +110,7 @@ function SpeechBubble({ isVisible }: { isVisible: boolean }) {
           )
         })}
         {/* Final blinking cursor when everything is typed */}
-        {currentLineIdx >= LINES.length && (
+        {currentLineIdx >= lines.length && (
           <p
             style={{
               fontFamily: "'Inter', sans-serif",
@@ -133,7 +129,7 @@ function SpeechBubble({ isVisible }: { isVisible: boolean }) {
   )
 }
 
-const STATS = [
+const DEFAULT_STATS = [
   { value: "8.56 GPA", label: "Academic Score" },
   { value: "2 Publications", label: "Research Output" },
   { value: "3 Projects", label: "Built & Shipped" }
@@ -142,6 +138,14 @@ const STATS = [
 export default function RobotIntroSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const [isVisible, setIsVisible] = useState(false)
+  const { profile } = usePortfolioData()
+
+  const robotLines = profile?.robot_lines?.length ? profile.robot_lines : [
+    "Oh hey — you must be here to learn about Kuldeep.",
+    "He's a third-year AI & ML engineer at Manipal University — GPA 8.56, published researcher, and patent holder.",
+    "He builds things that think: LLMs, RAG systems, neural networks. The kind of work that gets noticed."
+  ]
+  const stats = profile?.stats?.length ? profile.stats : DEFAULT_STATS
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -168,11 +172,15 @@ export default function RobotIntroSection() {
         background: '#050508',
         padding: '80px 5vw',
         overflow: 'hidden', // prevent horizontal scroll from animations
+        position: 'relative',
       }}
     >
+      <Starfield />
       <div
         className="max-w-7xl mx-auto w-full"
         style={{
+          position: 'relative',
+          zIndex: 10,
           display: 'grid',
           // Mobile: column (reversed below in CSS), Desktop: 2 columns
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
@@ -206,7 +214,7 @@ export default function RobotIntroSection() {
             Hello, World.
           </p>
 
-          <SpeechBubble isVisible={isVisible} />
+          <SpeechBubble isVisible={isVisible} lines={robotLines} />
 
           {/* Stats Row */}
           <div
@@ -219,7 +227,7 @@ export default function RobotIntroSection() {
               flexWrap: 'wrap',
             }}
           >
-            {STATS.map((stat, i) => (
+            {stats.map((stat, i) => (
               <div
                 key={stat.label}
                 style={{

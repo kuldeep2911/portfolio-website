@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { ongoing } from '../data/portfolio'
-import { Check, Microscope, Music, Cpu, Network, Bot, ArrowUpRight } from 'lucide-react'
+import Starfield from './Starfield'
+import { Check, Microscope, Music, Cpu, Network, Bot } from 'lucide-react'
+import { usePortfolioData } from '../data/usePortfolioData'
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Microscope: <Microscope size={20} color="#E0003C" />,
@@ -13,6 +14,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 export default function OngoingSection() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(false)
+  const { ongoing } = usePortfolioData()
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -47,8 +49,11 @@ export default function OngoingSection() {
         background: '#050508',
         padding: '80px 5vw 100px',
         position: 'relative',
+        overflow: 'hidden',
       }}
     >
+      <Starfield />
+      <div style={{ position: 'relative', zIndex: 10 }}>
       {/* ── HEADER ── */}
       <div style={{ marginBottom: '3rem' }}>
         <h2
@@ -286,6 +291,7 @@ export default function OngoingSection() {
             </div>
           )
         })}
+      </div>
       </div>
     </section>
   )

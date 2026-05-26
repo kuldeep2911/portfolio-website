@@ -1,37 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Github, Linkedin, FileText } from 'lucide-react'
-import { socialLinks } from '../data/portfolio'
+import { Github, Linkedin, FileText, Twitter, Globe } from 'lucide-react'
+import Starfield from './Starfield'
+import { usePortfolioData } from '../data/usePortfolioData'
 
-const githubLink = socialLinks.find(s => s.platform === 'GitHub')?.url || '#'
-const linkedinLink = socialLinks.find(s => s.platform === 'LinkedIn')?.url || '#'
-
-const SOCIAL_LINKS = [
-  { 
-    icon: Github, 
-    label: 'GitHub', 
-    sub: 'github.com/kuldeep',
-    href: githubLink,
-    download: false,
-  },
-  { 
-    icon: Linkedin, 
-    label: 'LinkedIn',
-    sub: 'kuldeep-kumar-99717031a',
-    href: linkedinLink,
-    download: false,
-  },
-  { 
-    icon: FileText, 
-    label: 'Resume',
-    sub: 'Download PDF',
-    href: '/resume.pdf',
-    download: true,
-  },
-];
+const ICON_MAP: Record<string, React.ElementType> = {
+  GitHub: Github, LinkedIn: Linkedin, Resume: FileText, Twitter, Globe
+}
 
 export default function ContactSection() {
   const robotRef = useRef<HTMLDivElement>(null)
   const [bubbleVisible, setBubbleVisible] = useState(false)
+  const { socialLinks: dbLinks, profile } = usePortfolioData()
+
+  // Build social links from Supabase data
+  const SOCIAL_LINKS = dbLinks.map(l => ({
+    icon: ICON_MAP[l.platform] ?? Globe,
+    label: l.platform,
+    sub: l.handle,
+    href: (!l.url.startsWith('http') && !l.url.startsWith('/') && !l.url.startsWith('mailto:')) ? `https://${l.url}` : l.url,
+    download: l.platform === 'Resume',
+  }))
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -60,24 +48,29 @@ export default function ContactSection() {
     <section
       id="contact"
       style={{
+        minHeight: '100vh',
         background: '#050508',
         padding: '100px 5vw 0',
         position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      {/* ── TOP HEADER ── */}
-      <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.65rem',
-            letterSpacing: '0.35em',
-            color: '#E0003C',
-            marginBottom: '0.75rem',
-          }}
-        >
-          GET IN TOUCH
-        </div>
+      <Starfield />
+
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
+        {/* ── TOP HEADER ── */}
+        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+          <div
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.65rem',
+              letterSpacing: '0.35em',
+              color: '#E0003C',
+              marginBottom: '0.75rem',
+            }}
+          >
+            GET IN TOUCH
+          </div>
         <h2
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
@@ -356,6 +349,7 @@ export default function ContactSection() {
       >
         © 2025 Kuldeep Kumar · AI/ML Engineer · Built with intelligence.
       </footer>
+      </div>
     </section>
   )
 }

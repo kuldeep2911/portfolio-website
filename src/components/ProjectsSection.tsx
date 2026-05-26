@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { projects } from '../data/portfolio';
+import Starfield from './Starfield';
+import { usePortfolioData } from '../data/usePortfolioData';
 import type { Project } from '../data/portfolio';
 
 // Generates the theme gradients for the image placeholders based on index
@@ -256,6 +257,22 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
 };
 
 export default function ProjectsSection() {
+  const { projects: dbProjects } = usePortfolioData()
+  // Map DB shape (snake_case) back to component shape (camelCase)
+  const projects = dbProjects.map(p => ({
+    id: p.id,
+    title: p.title,
+    description: p.description,
+    longDescription: p.long_description,
+    tags: p.tags,
+    category: p.category as 'ml' | 'nlp' | 'cv' | 'llm' | 'data',
+    status: p.status as 'production' | 'research' | 'open-source',
+    metrics: p.metrics,
+    githubUrl: p.github_url,
+    demoUrl: p.demo_url,
+    featured: p.featured,
+    year: p.year,
+  }))
   return (
     <section
       id="projects"
@@ -271,6 +288,8 @@ export default function ProjectsSection() {
         zIndex: 10,
       }}
     >
+      <Starfield />
+      <div style={{ position: 'relative', zIndex: 10 }}>
       <h2
         style={{
           fontFamily: "'Space Grotesk', sans-serif",
@@ -297,6 +316,7 @@ export default function ProjectsSection() {
             totalProjects={projects.length}
           />
         ))}
+      </div>
       </div>
     </section>
   );

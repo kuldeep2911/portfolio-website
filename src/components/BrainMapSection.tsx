@@ -1,18 +1,25 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Brain, Database, Activity, Network, MessageSquare, FileText } from 'lucide-react'
+import Starfield from './Starfield'
+import { usePortfolioData } from '../data/usePortfolioData'
 
-const NODES = [
-  { id: 1, label: "LLM Fine-Tuning", icon: Brain, x: 75, y: 20, cx: 50, cy: 20, dur: 3.2 },
-  { id: 2, label: "RAG Systems", icon: Database, x: 85, y: 48, cx: 65, cy: 40, dur: 2.5 },
-  { id: 3, label: "Medical AI", icon: Activity, x: 70, y: 75, cx: 50, cy: 75, dur: 3.8 },
-  { id: 4, label: "Social Networks", icon: Network, x: 30, y: 75, cx: 50, cy: 75, dur: 2.9 },
-  { id: 5, label: "NLP & BERT", icon: MessageSquare, x: 15, y: 48, cx: 35, cy: 40, dur: 4.0 },
-  { id: 6, label: "Published Research", icon: FileText, x: 25, y: 20, cx: 50, cy: 20, dur: 3.5 },
-];
 
 export default function BrainMapSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const [isVisible, setIsVisible] = useState(false)
+  const { brainNodes } = usePortfolioData()
+
+  const ICON_MAP: Record<string, React.FC<{ size?: number; color?: string }>> = {
+    Brain, Database, Activity, Network, MessageSquare, FileText
+  }
+
+  // Map DB nodes to the shape the rest of the component expects
+  const NODES = brainNodes.map((n, idx) => ({
+    id: n.id ?? idx + 1,
+    label: n.label,
+    icon: ICON_MAP[n.icon] ?? Brain,
+    x: n.x, y: n.y, cx: n.cx, cy: n.cy, dur: n.dur
+  }))
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -40,6 +47,7 @@ export default function BrainMapSection() {
         padding: '80px 5vw',
       }}
     >
+      <Starfield />
       <style>{`
         @keyframes flowWire {
           from { stroke-dashoffset: 0; }
