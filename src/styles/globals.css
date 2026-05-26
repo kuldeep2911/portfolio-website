@@ -1,0 +1,96 @@
+/* ─────────────────────────────────────────────
+   CSS Custom Properties — Design System Tokens
+   ───────────────────────────────────────────── */
+:root {
+  --color-bg-primary:    #050508;
+  --color-bg-surface:    #0D0D14;
+  --color-bg-elevated:   #12121C;
+  --color-accent-red:    #E0003C;
+  --color-accent-pink:   #FF4D6D;
+  --color-accent-purple: #7B2FBE;
+  --color-text-primary:  #F0EEF8;
+  --color-text-secondary:#8B8B9E;
+}
+
+/* ─────────────────────────────────────────────
+   Reset & Base
+   ───────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: var(--color-bg-primary);
+  scroll-behavior: smooth;
+  /* Custom scrollbar — Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-accent-red) var(--color-bg-primary);
+}
+
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ─────────────────────────────────────────────
+   Custom Scrollbar — WebKit
+   ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent-red);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-pink);
+}
+
+/* ─────────────────────────────────────────────
+   Text Selection
+   ───────────────────────────────────────────── */
+::selection {
+  background: var(--color-accent-red);
+  color: var(--color-text-primary);
+}
+
+/* ─────────────────────────────────────────────
+   Gradient Text Utilities
+   ───────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(180deg, #3D1520 0%, #E0003C 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-bright {
+  background: linear-gradient(135deg, #E0003C, #FF4D6D);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─────────────────────────────────────────────
+   Focus visible (accessibility)
+   ───────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-accent-red);
+  outline-offset: 3px;
+}
