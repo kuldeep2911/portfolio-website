@@ -10,9 +10,10 @@ export interface Project {
   tags: string[]
   category: 'ml' | 'nlp' | 'cv' | 'llm' | 'data'
   status: 'production' | 'research' | 'open-source'
-  metrics?: { label: string; value: string }[]
+  bentoTexts?: string[]
   githubUrl?: string
   demoUrl?: string
+  videoUrl?: string
   paperUrl?: string
   featured: boolean
   year: number
@@ -62,7 +63,7 @@ export interface OngoingProject {
   id: string
   title: string
   icon: string
-  status: 'in_progress' | 'planning' | 'beta'
+  status: string
   highlights: string[]
 }
 
@@ -138,13 +139,8 @@ export const projects: Project[] = [
     tags: ['LangChain', 'OpenAI', 'Pinecone', 'FastAPI', 'Kubernetes', 'Redis'],
     category: 'llm',
     status: 'production',
-    metrics: [
-      { label: 'Daily Queries', value: '10K+' },
-      { label: 'Latency P95', value: '<200ms' },
-      { label: 'Uptime', value: '99.9%' },
-      { label: 'Accuracy', value: '94.2%' },
-    ],
-    githubUrl: 'https://github.com/kuldeepkumar/enterprise-rag',
+    bentoTexts: ['Serves 10K+ queries daily', 'Sub-200ms latency', 'High accuracy'],
+    githubUrl: 'https://github.com/kuldeep2911/enterprise-rag',
     featured: true,
     year: 2024,
   },
@@ -158,12 +154,7 @@ export const projects: Project[] = [
     tags: ['YOLOv8', 'TensorRT', 'OpenCV', 'Python', 'NVIDIA Jetson', 'PyTorch'],
     category: 'cv',
     status: 'production',
-    metrics: [
-      { label: 'Precision', value: '98.7%' },
-      { label: 'Inference Speed', value: '47 FPS' },
-      { label: 'Training Images', value: '50K' },
-      { label: 'Defect Classes', value: '14' },
-    ],
+    bentoTexts: ['98.7% precision', '47 FPS speed', '50K images'],
     githubUrl: 'https://github.com/kuldeepkumar/defect-detection',
     featured: true,
     year: 2024,
@@ -178,11 +169,7 @@ export const projects: Project[] = [
     tags: ['PyTorch', 'HuggingFace', 'LoRA', 'QLoRA', 'W&B', 'Optuna', 'CUDA'],
     category: 'llm',
     status: 'open-source',
-    metrics: [
-      { label: 'Cost Reduction', value: '60%' },
-      { label: 'GitHub Stars', value: '1.2K' },
-      { label: 'Models Supported', value: '15+' },
-    ],
+    bentoTexts: ['60% cost reduction', '1.2K stars', '15+ models'],
     githubUrl: 'https://github.com/kuldeepkumar/llm-finetune-kit',
     featured: true,
     year: 2024,
@@ -197,10 +184,7 @@ export const projects: Project[] = [
     tags: ['CLIP', 'FAISS', 'FastAPI', 'Next.js', 'PostgreSQL', 'Docker'],
     category: 'cv',
     status: 'production',
-    metrics: [
-      { label: 'Index Size', value: '1M+ items' },
-      { label: 'Search Latency', value: '<100ms' },
-    ],
+    bentoTexts: ['1M+ items indexed', 'Sub-100ms search'],
     githubUrl: 'https://github.com/kuldeepkumar/multimodal-search',
     demoUrl: 'https://multimodal-search-demo.vercel.app',
     featured: false,
@@ -215,12 +199,9 @@ export const projects: Project[] = [
     Deployed as a scalable REST API on AWS Lambda + API Gateway.`,
     tags: ['DeBERTa', 'HuggingFace', 'AWS Lambda', 'Serverless', 'NLP'],
     category: 'nlp',
-    status: 'production',
-    metrics: [
-      { label: 'F1 Score', value: '0.932' },
-      { label: 'Inference', value: '~45ms' },
-    ],
-    githubUrl: 'https://github.com/kuldeepkumar/sentiment-api',
+    status: 'research',
+    bentoTexts: ['24fps real-time tracking', 'Multi-object detection', 'High precision'],
+    githubUrl: 'https://github.com/kuldeep2911/surgical-cv',
     featured: false,
     year: 2023,
   },
@@ -234,11 +215,8 @@ export const projects: Project[] = [
     tags: ['MLflow', 'FastAPI', 'React', 'Docker', 'PostgreSQL', 'Prometheus'],
     category: 'ml',
     status: 'open-source',
-    metrics: [
-      { label: 'GitHub Stars', value: '340' },
-      { label: 'Active Teams', value: '20+' },
-    ],
-    githubUrl: 'https://github.com/kuldeepkumar/mlops-lite',
+    bentoTexts: ['2M+ downloads', 'Active community', 'SOTA performance'],
+    githubUrl: 'https://github.com/kuldeep2911/nlp-toolkit',
     featured: false,
     year: 2023,
   },

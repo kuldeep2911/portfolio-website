@@ -77,6 +77,17 @@ function AboutTab() {
     setProfile({ ...profile, stats })
   }
 
+  const addStat = () => {
+    if (!profile) return
+    setProfile({ ...profile, stats: [...profile.stats, { value: '', label: '' }] })
+  }
+
+  const removeStat = (i: number) => {
+    if (!profile) return
+    const stats = profile.stats.filter((_, idx) => idx !== i)
+    setProfile({ ...profile, stats })
+  }
+
   if (loading) return <p style={{ color: '#888' }}>Loading…</p>
   if (!profile) return <p style={{ color: '#888' }}>No data — run Setup first.</p>
 
@@ -142,7 +153,7 @@ function AboutTab() {
       <div style={s.section}>
         <h3 style={s.h3}>Stats Row (about section)</h3>
         {profile.stats.map((stat, i) => (
-          <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+          <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 8, alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
               <label style={s.label}>Value</label>
               <input style={{ ...s.input, marginBottom: 0 }} value={stat.value} onChange={e => updateStat(i, 'value', e.target.value)} />
@@ -151,8 +162,10 @@ function AboutTab() {
               <label style={s.label}>Label</label>
               <input style={{ ...s.input, marginBottom: 0 }} value={stat.label} onChange={e => updateStat(i, 'label', e.target.value)} />
             </div>
+            <button style={{ ...s.btnDanger, height: 42 }} onClick={() => removeStat(i)}>✕</button>
           </div>
         ))}
+        <button style={s.btnSecondary} onClick={addStat}>+ Add Stat</button>
       </div>
 
       <button style={s.btn} onClick={save}>Save All</button>
@@ -271,7 +284,7 @@ function ProjectsTab() {
     const newId = `project-${Date.now()}`
     setProjects([...projects, {
       id: newId, title: 'New Project', description: '', long_description: '',
-      tags: [], category: 'ml', status: 'research', metrics: [],
+      tags: [], category: 'ml', status: 'research', bento_texts: ['', '', ''],
       featured: false, year: new Date().getFullYear(), sort_order: projects.length
     }])
     setExpanded(projects.length)
@@ -303,15 +316,17 @@ function ProjectsTab() {
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={s.label}>Category</label>
-                  <select style={s.input} value={p.category} onChange={e => update(i, 'category', e.target.value)}>
-                    {['ml','nlp','cv','llm','data'].map(c => <option key={c}>{c}</option>)}
-                  </select>
+                  <input style={s.input} list="categories" value={p.category} onChange={e => update(i, 'category', e.target.value)} />
+                  <datalist id="categories">
+                    {['ml','nlp','cv','llm','data'].map(c => <option key={c} value={c} />)}
+                  </datalist>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={s.label}>Status</label>
-                  <select style={s.input} value={p.status} onChange={e => update(i, 'status', e.target.value)}>
-                    {['production','research','open-source'].map(c => <option key={c}>{c}</option>)}
-                  </select>
+                  <label style={s.label}>Status (leave blank to hide)</label>
+                  <input style={s.input} list="statusList" value={p.status || ''} onChange={e => update(i, 'status', e.target.value)} />
+                  <datalist id="statusList">
+                    {['production','research','open-source'].map(c => <option key={c} value={c} />)}
+                  </datalist>
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={s.label}>Year</label>
@@ -326,15 +341,34 @@ function ProjectsTab() {
                 </div>
               </div>
               <label style={s.label}>Tags (comma-separated)</label>
-              <input style={s.input} value={p.tags.join(', ')} onChange={e => update(i, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))} />
+              <input style={s.input} value={p.tags.join(',')} onChange={e => update(i, 'tags', e.target.value.split(','))} />
               <label style={s.label}>GitHub URL</label>
               <input style={s.input} value={p.github_url || ''} onChange={e => update(i, 'github_url', e.target.value)} />
               <label style={s.label}>Demo URL</label>
               <input style={s.input} value={p.demo_url || ''} onChange={e => update(i, 'demo_url', e.target.value)} />
-              <label style={s.label}>Metrics (JSON array: [{`{"label":"Stars","value":"100"}`}])</label>
-              <textarea style={s.textarea} value={JSON.stringify(p.metrics, null, 2)} onChange={e => { try { update(i, 'metrics', JSON.parse(e.target.value)) } catch { /* ignore */ } }} />
+              <label style={s.label}>Demo Video URL (Google Drive/YouTube)</label>
+              <input style={s.input} value={p.video_url || ''} onChange={e => update(i, 'video_url', e.target.value)} />
+              <label style={s.label}>Bento Box Texts (3 boxes)</label>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                {[0, 1, 2].map(bIdx => (
+                  <textarea
+                    key={bIdx}
+                    style={{ ...s.textarea, flex: 1, minHeight: 80, marginBottom: 0 }}
+                    value={p.bento_texts?.[bIdx] || ''}
+                    onChange={e => {
+                      const newBento = [...(p.bento_texts || ['', '', ''])]
+                      newBento[bIdx] = e.target.value
+                      update(i, 'bento_texts', newBento)
+                    }}
+                    placeholder={`Box ${bIdx + 1} text`}
+                  />
+                ))}
+              </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button style={s.btn} onClick={() => save(p)}>Save</button>
+                <button style={s.btn} onClick={() => {
+                  const pToSave = { ...p, tags: p.tags.map(t => t.trim()).filter(Boolean) }
+                  save(pToSave)
+                }}>Save</button>
                 <button style={s.btnDanger} onClick={() => remove(p.id)}>Delete Project</button>
               </div>
             </div>
@@ -500,12 +534,11 @@ function OngoingTab() {
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={s.label}>Status</label>
-              <select style={s.input} value={item.status} onChange={e => update(i, 'status', e.target.value as OngoingData['status'])}>
-                <option value="in_progress">In Progress</option>
-                <option value="planning">Planning</option>
-                <option value="beta">Beta</option>
-              </select>
+              <label style={s.label}>Status (leave blank to hide)</label>
+              <input style={s.input} list="ongoingStatusList" value={item.status || ''} onChange={e => update(i, 'status', e.target.value)} />
+              <datalist id="ongoingStatusList">
+                {['in_progress', 'planning', 'beta'].map(c => <option key={c} value={c} />)}
+              </datalist>
             </div>
           </div>
           <label style={s.label}>Highlights</label>

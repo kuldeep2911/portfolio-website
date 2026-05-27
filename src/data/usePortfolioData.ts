@@ -47,9 +47,10 @@ export interface ProjectData {
   tags: string[]
   category: string
   status: string
-  metrics: { label: string; value: string }[]
+  bento_texts?: string[]
   github_url?: string
   demo_url?: string
+  video_url?: string
   paper_url?: string
   featured: boolean
   year: number
@@ -68,7 +69,7 @@ export interface OngoingData {
   id: string
   title: string
   icon: string
-  status: 'in_progress' | 'planning' | 'beta'
+  status: string
   highlights: string[]
   sort_order?: number
 }
@@ -134,9 +135,10 @@ const STATIC_PROJECTS: ProjectData[] = staticProjects.map((p, i) => ({
   tags: p.tags,
   category: p.category,
   status: p.status,
-  metrics: p.metrics || [],
+  bento_texts: p.bentoTexts || [],
   github_url: p.githubUrl,
   demo_url: p.demoUrl,
+  video_url: p.videoUrl,
   paper_url: p.paperUrl,
   featured: p.featured,
   year: p.year,

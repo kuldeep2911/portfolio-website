@@ -1,8 +1,7 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Starfield from './Starfield';
-import { usePortfolioData } from '../data/usePortfolioData';
-import type { Project } from '../data/portfolio';
+import { usePortfolioData, type ProjectData } from '../data/usePortfolioData';
 
 // Generates the theme gradients for the image placeholders based on index
 function getGradients(index: number) {
@@ -28,7 +27,7 @@ function getGradients(index: number) {
   }
 }
 
-const ProjectCard = ({ project, index, totalProjects }: { project: Project, index: number, totalProjects: number }) => {
+const ProjectCard = ({ project, index, totalProjects }: { project: ProjectData, index: number, totalProjects: number }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -42,8 +41,15 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
   const scale = useTransform(scrollYProgress, [0, 1], [1, targetScale]);
 
   const grads = getGradients(index);
-  const statLabel = project.metrics?.[0]?.value || "92%";
   const numberStr = String(index + 1).padStart(2, '0');
+
+  // Safely extract string from bento_texts (handles old metrics objects to prevent React crash)
+  const getBentoText = (idx: number, fallback: string) => {
+    const val = project.bento_texts?.[idx];
+    if (typeof val === 'string') return val;
+    if (val && typeof val === 'object') return (val as any).value || (val as any).label || fallback;
+    return fallback;
+  };
 
   return (
     <div ref={wrapperRef} style={{ height: '85vh', position: 'relative', display: 'flex', justifyContent: 'center' }}>
@@ -116,23 +122,25 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
 
           {/* RIGHT GROUP */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '0.82rem',
-                color: '#FF4D6D',
-                background: 'rgba(224, 0, 60, 0.1)',
-                border: '1px solid rgba(224, 0, 60, 0.28)',
-                borderRadius: '8px',
-                padding: '5px 12px',
-              }}
-            >
-              {statLabel}
-            </span>
+            {project.status && (
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.82rem',
+                  color: '#FF4D6D',
+                  background: 'rgba(224, 0, 60, 0.1)',
+                  border: '1px solid rgba(224, 0, 60, 0.28)',
+                  borderRadius: '8px',
+                  padding: '5px 12px',
+                }}
+              >
+                {project.status.toUpperCase()}
+              </span>
+            )}
 
-            {project.githubUrl && (
+            {project.github_url && (
               <a
-                href={project.githubUrl}
+                href={project.github_url}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -159,6 +167,72 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
                 View on GitHub
               </a>
             )}
+            {project.demo_url && (
+              <a
+                href={project.demo_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(224, 0, 60, 0.4)',
+                  borderRadius: '999px',
+                  padding: '0.55rem 1.3rem',
+                  color: '#E0003C',
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: '0.78rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  textDecoration: 'none',
+                  transition: 'background 200ms, border-color 200ms',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(224, 0, 60, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(224, 0, 60, 0.8)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = 'rgba(224, 0, 60, 0.4)';
+                }}
+              >
+                Live Demo
+              </a>
+            )}
+            {project.video_url && (
+              <a
+                href={project.video_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: 'rgba(224, 0, 60, 0.1)',
+                  border: '1px solid rgba(224, 0, 60, 0.5)',
+                  borderRadius: '999px',
+                  padding: '0.55rem 1.3rem',
+                  color: '#E0003C',
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: '0.78rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  textDecoration: 'none',
+                  transition: 'all 200ms',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(224, 0, 60, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(224, 0, 60, 0.8)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(224, 0, 60, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(224, 0, 60, 0.5)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Watch Demo
+              </a>
+            )}
           </div>
         </div>
 
@@ -179,7 +253,7 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
 
         {/* TECH TAGS ROW */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '1.25rem' }}>
-          {project.tags.map((tag) => (
+          {(project.tags || []).map((tag) => (
             <span
               key={tag}
               style={{
@@ -216,9 +290,11 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                padding: '16px',
+                textAlign: 'center',
               }}
             >
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(1.2rem, 3vw, 2rem)', fontWeight: 700, color: 'rgba(224,0,60,0.3)' }}>{statLabel}</span>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(0.9rem, 1.2vw, 1.2rem)', fontWeight: 600, color: '#F0EEF8', lineHeight: 1.3 }}>{getBentoText(0, 'Box 1 Text')}</span>
             </div>
             <div
               style={{
@@ -229,9 +305,11 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                padding: '16px',
+                textAlign: 'center',
               }}
             >
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(1.2rem, 3vw, 2rem)', fontWeight: 700, color: 'rgba(224,0,60,0.3)' }}>{statLabel}</span>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(0.9rem, 1.2vw, 1.2rem)', fontWeight: 600, color: '#F0EEF8', lineHeight: 1.3 }}>{getBentoText(1, 'Box 2 Text')}</span>
             </div>
           </div>
 
@@ -245,9 +323,11 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              padding: '24px',
+              textAlign: 'center',
             }}
           >
-            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(1.5rem, 4vw, 3rem)', fontWeight: 700, color: 'rgba(224,0,60,0.3)' }}>{statLabel}</span>
+            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(1.2rem, 1.8vw, 2rem)', fontWeight: 600, color: '#F0EEF8', lineHeight: 1.3 }}>{getBentoText(2, 'Box 3 Text')}</span>
           </div>
         </div>
 
@@ -258,21 +338,7 @@ const ProjectCard = ({ project, index, totalProjects }: { project: Project, inde
 
 export default function ProjectsSection() {
   const { projects: dbProjects } = usePortfolioData()
-  // Map DB shape (snake_case) back to component shape (camelCase)
-  const projects = dbProjects.map(p => ({
-    id: p.id,
-    title: p.title,
-    description: p.description,
-    longDescription: p.long_description,
-    tags: p.tags,
-    category: p.category as 'ml' | 'nlp' | 'cv' | 'llm' | 'data',
-    status: p.status as 'production' | 'research' | 'open-source',
-    metrics: p.metrics,
-    githubUrl: p.github_url,
-    demoUrl: p.demo_url,
-    featured: p.featured,
-    year: p.year,
-  }))
+  const projects = dbProjects
   return (
     <section
       id="projects"

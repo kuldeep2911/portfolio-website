@@ -232,12 +232,13 @@ export default function OngoingSection() {
               </h3>
 
               {/* Status badge */}
-              {project.status === 'in_progress' && (
+              {project.status && project.status.trim() !== '' && (
                 <div
                   style={{
                     position: 'absolute',
-                    top: '1rem',
-                    right: '1rem',
+                    top: '1.25rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
                     background: 'rgba(224,0,60,0.12)',
                     border: '1px solid rgba(224,0,60,0.28)',
                     fontFamily: "'JetBrains Mono', monospace",
@@ -245,9 +246,12 @@ export default function OngoingSection() {
                     color: '#E0003C',
                     borderRadius: '999px',
                     padding: '3px 9px',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '0.05em',
                   }}
                 >
-                  IN PROGRESS
+                  {project.status}
                 </div>
               )}
 
@@ -270,24 +274,6 @@ export default function OngoingSection() {
                 ))}
               </div>
 
-              {/* Learn more link */}
-              <div
-                className="learn-more-link"
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: '0.8rem',
-                  color: '#E0003C',
-                  marginTop: 'auto',
-                  paddingTop: '1rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  cursor: 'pointer',
-                  width: 'fit-content',
-                }}
-              >
-                Learn more <span className="learn-more-arrow">→</span>
-              </div>
             </div>
           )
         })}
