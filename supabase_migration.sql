@@ -87,6 +87,16 @@ create table if not exists social_links (
   updated_at timestamptz not null default now()
 );
 
+-- 7. MESSAGES TABLE (Contact Form)
+create table if not exists messages (
+  id bigint primary key generated always as identity,
+  name text not null,
+  email text not null,
+  message text not null,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 -- Allow public read access (your portfolio is public)
 alter table profile enable row level security;
 alter table brain_nodes enable row level security;
@@ -94,20 +104,90 @@ alter table projects enable row level security;
 alter table skills enable row level security;
 alter table ongoing_projects enable row level security;
 alter table social_links enable row level security;
+alter table messages enable row level security;
 
+drop policy if exists "Public can read profile" on profile;
 create policy "Public can read profile" on profile for select using (true);
-create policy "Public can read brain_nodes" on brain_nodes for select using (true);
-create policy "Public can read projects" on projects for select using (true);
-create policy "Public can read skills" on skills for select using (true);
-create policy "Public can read ongoing_projects" on ongoing_projects for select using (true);
-create policy "Public can read social_links" on social_links for select using (true);
 
--- Allow full write access from the anon key (admin dashboard uses it)
--- In production you'd lock this down with a service role key, but for a personal
--- portfolio this is the simplest approach.
-create policy "Anon can write profile" on profile for all using (true);
-create policy "Anon can write brain_nodes" on brain_nodes for all using (true);
-create policy "Anon can write projects" on projects for all using (true);
-create policy "Anon can write skills" on skills for all using (true);
-create policy "Anon can write ongoing_projects" on ongoing_projects for all using (true);
-create policy "Anon can write social_links" on social_links for all using (true);
+drop policy if exists "Public can read brain_nodes" on brain_nodes;
+create policy "Public can read brain_nodes" on brain_nodes for select using (true);
+
+drop policy if exists "Public can read projects" on projects;
+create policy "Public can read projects" on projects for select using (true);
+
+drop policy if exists "Public can read skills" on skills;
+create policy "Public can read skills" on skills for select using (true);
+
+drop policy if exists "Public can read ongoing" on ongoing_projects;
+create policy "Public can read ongoing" on ongoing_projects for select using (true);
+
+drop policy if exists "Public can read social" on social_links;
+create policy "Public can read social" on social_links for select using (true);
+
+drop policy if exists "Public can read messages" on messages;
+create policy "Authenticated can read messages" on messages for select to authenticated using (true);
+
+-- Allow public inserts to messages
+drop policy if exists "Public can insert messages" on messages;
+create policy "Public can insert messages" on messages for insert with check (true);
+
+-- Secure all policies (Requires Supabase Auth Login for any writes)
+drop policy if exists "Public can insert profile" on profile;
+create policy "Authenticated can insert profile" on profile for insert to authenticated with check (true);
+
+drop policy if exists "Public can update profile" on profile;
+create policy "Authenticated can update profile" on profile for update to authenticated using (true);
+
+drop policy if exists "Public can delete profile" on profile;
+create policy "Authenticated can delete profile" on profile for delete to authenticated using (true);
+
+drop policy if exists "Public can insert brain_nodes" on brain_nodes;
+create policy "Authenticated can insert brain_nodes" on brain_nodes for insert to authenticated with check (true);
+
+drop policy if exists "Public can update brain_nodes" on brain_nodes;
+create policy "Authenticated can update brain_nodes" on brain_nodes for update to authenticated using (true);
+
+drop policy if exists "Public can delete brain_nodes" on brain_nodes;
+create policy "Authenticated can delete brain_nodes" on brain_nodes for delete to authenticated using (true);
+
+drop policy if exists "Public can insert projects" on projects;
+create policy "Authenticated can insert projects" on projects for insert to authenticated with check (true);
+
+drop policy if exists "Public can update projects" on projects;
+create policy "Authenticated can update projects" on projects for update to authenticated using (true);
+
+drop policy if exists "Public can delete projects" on projects;
+create policy "Authenticated can delete projects" on projects for delete to authenticated using (true);
+
+drop policy if exists "Public can insert skills" on skills;
+create policy "Authenticated can insert skills" on skills for insert to authenticated with check (true);
+
+drop policy if exists "Public can update skills" on skills;
+create policy "Authenticated can update skills" on skills for update to authenticated using (true);
+
+drop policy if exists "Public can delete skills" on skills;
+create policy "Authenticated can delete skills" on skills for delete to authenticated using (true);
+
+drop policy if exists "Public can insert ongoing" on ongoing_projects;
+create policy "Authenticated can insert ongoing" on ongoing_projects for insert to authenticated with check (true);
+
+drop policy if exists "Public can update ongoing" on ongoing_projects;
+create policy "Authenticated can update ongoing" on ongoing_projects for update to authenticated using (true);
+
+drop policy if exists "Public can delete ongoing" on ongoing_projects;
+create policy "Authenticated can delete ongoing" on ongoing_projects for delete to authenticated using (true);
+
+drop policy if exists "Public can insert social" on social_links;
+create policy "Authenticated can insert social" on social_links for insert to authenticated with check (true);
+
+drop policy if exists "Public can update social" on social_links;
+create policy "Authenticated can update social" on social_links for update to authenticated using (true);
+
+drop policy if exists "Public can delete social" on social_links;
+create policy "Authenticated can delete social" on social_links for delete to authenticated using (true);
+
+drop policy if exists "Public can update messages" on messages;
+create policy "Authenticated can update messages" on messages for update to authenticated using (true);
+
+drop policy if exists "Public can delete messages" on messages;
+create policy "Authenticated can delete messages" on messages for delete to authenticated using (true);

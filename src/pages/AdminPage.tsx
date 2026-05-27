@@ -28,7 +28,7 @@ function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
 
 // ─── TABS ────────────────────────────────────────────────────────────────────
 
-const TABS = ['About', 'Brain Map', 'Projects', 'Skills', 'Ongoing', 'Contact', 'Setup']
+const TABS = ['About', 'Brain Map', 'Projects', 'Skills', 'Ongoing', 'Contact', 'Messages', 'Setup']
 
 // ─── ABOUT TAB ───────────────────────────────────────────────────────────────
 
@@ -621,6 +621,65 @@ function ContactTab() {
   )
 }
 
+// ─── MESSAGES TAB ─────────────────────────────────────────────────────────────
+
+function MessagesTab() {
+  const [messages, setMessages] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchMessages = async () => {
+    setLoading(true)
+    const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false })
+    if (data) setMessages(data)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchMessages()
+  }, [])
+
+  const deleteMessage = async (id: number) => {
+    if (!window.confirm('Delete this message?')) return
+    await supabase.from('messages').delete().eq('id', id)
+    fetchMessages()
+  }
+
+  if (loading) return <p style={{ color: '#888' }}>Loading messages…</p>
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h3 style={s.h3}>Inbox ({messages.length})</h3>
+        <button style={s.btnSecondary} onClick={fetchMessages}>Refresh</button>
+      </div>
+
+      {messages.length === 0 ? (
+        <p style={{ color: '#888' }}>No messages yet.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {messages.map((m) => (
+            <div key={m.id} style={{ ...s.row, flexDirection: 'column', marginBottom: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: 12 }}>
+                <div>
+                  <strong style={{ color: '#fff', fontSize: 16 }}>{m.name}</strong>
+                  <span style={{ color: '#888', marginLeft: 12, fontSize: 14 }}>{m.email}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ color: '#666', fontSize: 12 }}>{new Date(m.created_at).toLocaleString()}</span>
+                  <button style={s.btnDanger} onClick={() => deleteMessage(m.id)}>Delete</button>
+                </div>
+              </div>
+              <div style={{ color: '#ddd', fontSize: 15, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: '#080808', padding: 16, borderRadius: 6, width: '100%', boxSizing: 'border-box' }}>
+                {m.message}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── SETUP TAB ────────────────────────────────────────────────────────────────
 
 function SetupTab() {
@@ -670,24 +729,35 @@ function SetupTab() {
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
+  const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   const [activeTab, setActiveTab] = useState(0)
-  const [pwError, setPwError] = useState(false)
-
-  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD
+  const [authError, setAuthError] = useState('')
+  const [isAuthLoading, setIsAuthLoading] = useState(true)
 
   useEffect(() => {
-    if (sessionStorage.getItem('admin_authed') === 'true') setAuthed(true)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthed(!!session)
+      setIsAuthLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(!!session)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const login = () => {
-    if (pw === ADMIN_PASSWORD) {
-      sessionStorage.setItem('admin_authed', 'true')
-      setAuthed(true)
-      setPwError(false)
-    } else {
-      setPwError(true)
-    }
+  const login = async () => {
+    setIsAuthLoading(true)
+    setAuthError('')
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pw })
+    if (error) setAuthError(error.message)
+    setIsAuthLoading(false)
+  }
+
+  if (isAuthLoading) {
+    return <div style={{ minHeight: '100vh', background: '#0a0a0a' }} />
   }
 
   if (!authed) {
@@ -695,7 +765,18 @@ export default function AdminPage() {
       <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ background: '#111', border: '1px solid #333', borderRadius: 12, padding: 40, minWidth: 320 }}>
           <h2 style={{ color: '#fff', margin: '0 0 4px 0', fontSize: 20 }}>Admin Dashboard</h2>
-          <p style={{ color: '#555', fontSize: 13, margin: '0 0 24px 0' }}>Portfolio CMS</p>
+          <p style={{ color: '#555', fontSize: 13, margin: '0 0 24px 0' }}>Portfolio CMS (Supabase Auth)</p>
+          
+          <label style={s.label}>Email</label>
+          <input
+            type="email"
+            style={s.input}
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && login()}
+            autoFocus
+          />
+
           <label style={s.label}>Password</label>
           <input
             type="password"
@@ -703,16 +784,17 @@ export default function AdminPage() {
             value={pw}
             onChange={e => setPw(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && login()}
-            autoFocus
           />
-          {pwError && <p style={{ color: '#f44336', fontSize: 13, margin: '-8px 0 12px' }}>Wrong password.</p>}
-          <button style={{ ...s.btn, width: '100%' }} onClick={login}>Login</button>
+          {authError && <p style={{ color: '#f44336', fontSize: 13, margin: '-8px 0 12px' }}>{authError}</p>}
+          <button style={{ ...s.btn, width: '100%' }} onClick={login} disabled={isAuthLoading}>
+            {isAuthLoading ? 'Logging in...' : 'Login'}
+          </button>
         </div>
       </div>
     )
   }
 
-  const tabContents = [<AboutTab />, <BrainMapTab />, <ProjectsTab />, <SkillsTab />, <OngoingTab />, <ContactTab />, <SetupTab />]
+  const tabContents = [<AboutTab />, <BrainMapTab />, <ProjectsTab />, <SkillsTab />, <OngoingTab />, <ContactTab />, <MessagesTab />, <SetupTab />]
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: "'Inter', sans-serif" }}>
@@ -724,7 +806,7 @@ export default function AdminPage() {
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <a href="/" target="_blank" style={{ color: '#888', fontSize: 13, textDecoration: 'none' }}>View Site ↗</a>
-          <button style={s.btnSecondary} onClick={() => { sessionStorage.removeItem('admin_authed'); setAuthed(false) }}>Logout</button>
+          <button style={s.btnSecondary} onClick={() => supabase.auth.signOut()}>Logout</button>
         </div>
       </div>
 

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Github, Linkedin, FileText, Twitter, Globe } from 'lucide-react'
-import Starfield from './Starfield'
 import { usePortfolioData } from '../data/usePortfolioData'
+import { supabase } from '../lib/supabase'
+import Starfield from './Starfield'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   GitHub: Github, LinkedIn: Linkedin, Resume: FileText, Twitter, Globe
@@ -38,10 +39,47 @@ export default function ContactSection() {
     return () => observer.disconnect()
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<'idle'|'sending'|'success'|'error'>('idle')
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission logic here
-    alert('Message sent! (Demo)')
+    setStatus('sending')
+    try {
+      // 1. Save to Supabase (Admin Inbox)
+      const { error } = await supabase.from('messages').insert([{ name, email, message }])
+      if (error) throw error
+
+      // 2. Send Email Notification via Web3Forms (if key is configured)
+      const web3FormsKey = import.meta.env.VITE_WEB3FORMS_KEY
+      if (web3FormsKey) {
+        await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            access_key: web3FormsKey,
+            subject: `New Portfolio Message from ${name}`,
+            from_name: name,
+            email: email,
+            message: message,
+          }),
+        })
+      }
+
+      setStatus('success')
+      setName('')
+      setEmail('')
+      setMessage('')
+      setTimeout(() => setStatus('idle'), 5000)
+    } catch (err) {
+      console.error(err)
+      setStatus('error')
+    }
   }
 
   return (
@@ -233,9 +271,12 @@ export default function ContactSection() {
             </label>
             <input
               type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
               className="contact-input"
               style={{ height: '52px' }}
               required
+              disabled={status === 'sending'}
             />
           </div>
 
@@ -254,9 +295,12 @@ export default function ContactSection() {
             </label>
             <input
               type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               className="contact-input"
               style={{ height: '52px' }}
               required
+              disabled={status === 'sending'}
             />
           </div>
 
@@ -274,14 +318,17 @@ export default function ContactSection() {
               YOUR MESSAGE
             </label>
             <textarea
+              value={message}
+              onChange={e => setMessage(e.target.value)}
               className="contact-input"
               style={{ height: '140px', padding: '0.85rem 1rem', resize: 'vertical' }}
               required
+              disabled={status === 'sending'}
             />
           </div>
 
-          <button type="submit" className="submit-btn">
-            SEND MESSAGE
+          <button type="submit" className="submit-btn" disabled={status === 'sending'}>
+            {status === 'sending' ? 'SENDING...' : status === 'success' ? 'MESSAGE SENT!' : status === 'error' ? 'ERROR! TRY AGAIN' : 'SEND MESSAGE'}
           </button>
         </form>
       </div>
