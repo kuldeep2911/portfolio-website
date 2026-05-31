@@ -27,19 +27,9 @@ function getGradients(index: number) {
   }
 }
 
-const ProjectCard = ({ project, index, totalProjects }: { project: ProjectData, index: number, totalProjects: number }) => {
-  const wrapperRef = useRef<HTMLDivElement>(null);
+import { MotionValue } from 'framer-motion';
 
-  const { scrollYProgress } = useScroll({
-    target: wrapperRef,
-    // Start scaling when the top of this card hits its sticky position, 
-    // finish scaling when the bottom of its wrapper leaves the viewport.
-    offset: ["start start", "end start"]
-  });
-
-  const targetScale = 1 - (totalProjects - 1 - index) * 0.03;
-  const scale = useTransform(scrollYProgress, [0, 1], [1, targetScale]);
-
+const ProjectCard = ({ project, index, scrollYProgress, totalProjects }: { project: ProjectData, index: number, scrollYProgress: MotionValue<number>, totalProjects: number }) => {
   const grads = getGradients(index);
   const numberStr = String(index + 1).padStart(2, '0');
 
@@ -51,22 +41,59 @@ const ProjectCard = ({ project, index, totalProjects }: { project: ProjectData, 
     return fallback;
   };
 
+  // Calculate shrink and fade based on scroll progress
+  const step = totalProjects > 1 ? 1 / (totalProjects - 1) : 1;
+
+  const input = [];
+  const scaleOutput = [];
+  const opacityOutput = [];
+
+  if (index > 0) {
+    input.push((index - 1) * step);
+    scaleOutput.push(0.6);
+    opacityOutput.push(0.1);
+  }
+
+  input.push(index * step);
+  scaleOutput.push(1);
+  opacityOutput.push(1);
+
+  if (index < totalProjects - 1) {
+    input.push((index + 1) * step);
+    scaleOutput.push(0.6);
+    opacityOutput.push(0.1);
+  }
+
+  // Fallback for single project to ensure useTransform has at least 2 points
+  if (input.length === 1) {
+    input.push(2); // this will never be reached in scrollYProgress [0,1]
+    scaleOutput.push(1);
+    opacityOutput.push(1);
+  }
+
+  const scale = useTransform(scrollYProgress, input, scaleOutput);
+  const opacity = useTransform(scrollYProgress, input, opacityOutput);
+
   return (
-    <div ref={wrapperRef} style={{ height: '85vh', position: 'relative', display: 'flex', justifyContent: 'center' }}>
-      <motion.div
+    <motion.div
+      style={{
+        width: '100vw',
+        display: 'flex',
+        justifyContent: 'center',
+        flexShrink: 0,
+        scale,
+        opacity,
+      }}
+    >
+      <div
         style={{
-          position: 'sticky',
-          top: `calc(96px + ${index * 28}px)`,
-          scale,
+          width: '90vw',
+          maxWidth: '1200px',
           background: '#0D0D14',
           border: '2px solid rgba(224, 0, 60, 0.18)',
           borderRadius: 'clamp(20px, 2.5vw, 42px)',
           padding: 'clamp(1.5rem, 3vw, 2.5rem)',
-          width: '90vw',
-          maxWidth: '1200px',
-          height: 'fit-content', // Ensures the card isn't artificially tall
-          overflow: 'hidden',
-          transformOrigin: 'top center',
+          height: 'fit-content',
           boxShadow: '0 -30px 50px rgba(5,5,8,0.95), 0 -10px 20px rgba(224,0,60,0.08)',
         }}
       >
@@ -330,59 +357,99 @@ const ProjectCard = ({ project, index, totalProjects }: { project: ProjectData, 
             <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(1.2rem, 1.8vw, 2rem)', fontWeight: 600, color: '#F0EEF8', lineHeight: 1.3 }}>{getBentoText(2, 'Box 3 Text')}</span>
           </div>
         </div>
-
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 };
 
 export default function ProjectsSection() {
-  const { projects: dbProjects } = usePortfolioData()
-  const projects = dbProjects
+  const { projects: dbProjects } = usePortfolioData();
+  const projects = dbProjects || [];
+
+  const targetRef = useRef<HTMLDivElement>(null);
+
+  // Track scroll progress of the entire huge container
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+  });
+
+  // We translate the x-axis to exactly -100vw per card so one card is perfectly centered per step
+  const maxScroll = projects.length > 1 ? (projects.length - 1) * 100 : 0;
+  const x = useTransform(scrollYProgress, [0, 1], ["0vw", `-${maxScroll}vw`]);
+
   return (
     <section
       id="projects"
       style={{
         background: '#050508',
         borderRadius: '50px 50px 0 0',
-        paddingTop: '80px',
-        paddingBottom: '40px',
-        paddingLeft: '5vw',
-        paddingRight: '5vw',
         marginTop: '-40px',
         position: 'relative',
         zIndex: 10,
       }}
     >
-      <Starfield />
-      <div style={{ position: 'relative', zIndex: 10 }}>
-      <h2
-        style={{
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: 'clamp(3rem, 10vw, 9rem)',
-          fontWeight: 700,
-          margin: 0,
-          background: 'linear-gradient(180deg, #3D1520 0%, #E0003C 60%, #FF4D6D 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          marginBottom: 'clamp(3rem, 6vw, 5rem)',
-          lineHeight: 1,
-        }}
-      >
-        PROJECTS
-      </h2>
+      {/* Huge container to create vertical scroll space. 100vh per project. */}
+      <div ref={targetRef} style={{ height: `${projects.length * 100}vh`, position: 'relative' }}>
+        
+        {/* Sticky container that locks to the screen */}
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center', // Centers cards vertically
+          }}
+        >
+          <Starfield />
+          
+          {/* Section Title stays fixed in the background/foreground */}
+          <h2
+            style={{
+              position: 'absolute',
+              top: '60px', // Pushed down to prevent clipping at the top
+              left: '0',
+              width: '100%',
+              textAlign: 'center',
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 'clamp(3rem, 10vw, 9rem)',
+              fontWeight: 700,
+              margin: 0,
+              background: 'linear-gradient(180deg, #3D1520 0%, #E0003C 60%, #FF4D6D 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              lineHeight: 1,
+              zIndex: 0, // Behind the sliding cards
+              opacity: 0.8,
+            }}
+          >
+            PROJECTS
+          </h2>
 
-      {/* Renders all projects as sticky stacking cards */}
-      <div>
-        {projects.map((project, index) => (
-          <ProjectCard
-            key={project.id}
-            project={project}
-            index={index}
-            totalProjects={projects.length}
-          />
-        ))}
-      </div>
+          {/* The horizontally sliding track of cards */}
+          <motion.div
+            style={{
+              x,
+              display: 'flex',
+              gap: 0,
+              paddingLeft: 0,
+              paddingRight: 0,
+              zIndex: 10, // In front of the title
+              marginTop: '100px', // Push the cards down to create a larger gap from the heading
+            }}
+          >
+            {projects.map((project, index) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                index={index}
+                scrollYProgress={scrollYProgress}
+                totalProjects={projects.length}
+              />
+            ))}
+          </motion.div>
+        </div>
       </div>
     </section>
   );
