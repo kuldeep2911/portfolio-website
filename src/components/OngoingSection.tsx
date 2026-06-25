@@ -18,14 +18,14 @@ export default function OngoingSection() {
         @keyframes livePulse { 0%,100%{ transform:scale(1); opacity:1 } 50%{ transform:scale(.55); opacity:.4 } }
         @keyframes scan { 0%{ transform:translateY(-120%) } 100%{ transform:translateY(820%) } }
         .obx-card { transition: flex-grow .55s cubic-bezier(.22,1,.36,1); }
-        .obx-row:hover .obx-card { flex-grow:.62; }
-        .obx-row .obx-card:hover { flex-grow:2.6; }
+        .obx-row:hover .obx-card { flex-grow:.62 !important; }
+        .obx-row .obx-card:hover { flex-grow:2.6 !important; }
         .obx-card:hover .obx-scan { opacity:1; }
-        .obx-card:hover .obx-body { opacity:1; transform:translateY(0); }
+        .obx-card:hover .obx-body { opacity:1 !important; transform:translateY(0) !important; }
         @media (max-width:860px){
           .obx-row{ flex-direction:column; height:auto !important; }
           .obx-card{ flex:none !important; min-height:230px; }
-          .obx-row:hover .obx-card, .obx-row .obx-card:hover { flex-grow:0; }
+          .obx-row:hover .obx-card, .obx-row .obx-card:hover { flex-grow:0 !important; }
           .obx-body{ opacity:1 !important; transform:none !important; }
           .obx-body span{ white-space:normal !important; }
         }
@@ -37,7 +37,7 @@ export default function OngoingSection() {
 
         <div className="obx-row" style={{ display: 'flex', gap: 14, marginTop: 40, height: 440 }}>
           {/* image card */}
-          <div className="obx-card" style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, border: '1px solid var(--line)', flex: 1, minWidth: 0 }}>
+          <div className="obx-card" style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, border: '1px solid var(--line)', flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0 }}>
             <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/ongoing.jpeg')", backgroundSize: 'cover', backgroundPosition: 'center' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(247,247,245,.96) 0%, rgba(247,247,245,.4) 55%, transparent 100%)' }} />
             <div style={{ position: 'absolute', bottom: 24, left: 24, right: 24, fontFamily: 'var(--serif)', fontSize: 23, lineHeight: 1.15, color: 'var(--ink)' }}>Building minds,<br />not just models.</div>
@@ -49,7 +49,7 @@ export default function OngoingSection() {
             const planning = (o.status || '').toLowerCase().includes('plan')
             const statusLabel = (o.status || '').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())
             return (
-              <div key={o.id} className="obx-card" style={{ position: 'relative', overflow: 'hidden', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 20, flex: 1, minWidth: 0, cursor: 'pointer' }}>
+              <div key={o.id} className="obx-card" style={{ position: 'relative', overflow: 'hidden', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 20, flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, cursor: 'pointer' }}>
                 <div className="obx-scan" style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '38%', background: 'linear-gradient(to bottom, transparent, rgba(17,17,17,.05))', opacity: 0, transition: 'opacity .4s ease', animation: `scan 3.4s linear infinite ${delays[i] || '0s'}`, pointerEvents: 'none' }} />
                 <div style={{ position: 'relative', height: '100%', padding: 26, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

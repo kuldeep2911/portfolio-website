@@ -115,6 +115,7 @@ export default function SkillsSection() {
                 const it = items[k]
                 const ang = (-90 + k * 360 / n) * Math.PI / 180
                 const x = cx + Math.cos(ang) * R, y = cy + Math.sin(ang) * R
+                const isTop = y < cy - 20 // node is in the upper portion — place label above
                 return (
                   <div key={'n' + k} className="con-node" style={{
                     position: 'absolute', left: x, top: y, width: 58, height: 58,
@@ -128,7 +129,14 @@ export default function SkillsSection() {
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink)' }} />
                       </div>
                     </div>
-                    <div className="con-label" style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-soft)', transition: 'color .3s ease, font-weight .3s ease', pointerEvents: 'none' }}>
+                    <div className="con-label" style={{
+                      position: 'absolute', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap',
+                      fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-soft)',
+                      transition: 'color .3s ease, font-weight .3s ease', pointerEvents: 'none',
+                      ...(isTop
+                        ? { bottom: 'calc(100% + 14px)' }
+                        : { top: 'calc(100% + 14px)' }),
+                    }}>
                       {it?.name}
                     </div>
                   </div>
@@ -138,7 +146,6 @@ export default function SkillsSection() {
               {/* hub */}
               <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%) translateZ(28px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 150, height: 150, borderRadius: '50%', background: 'var(--ink)', color: '#F7F7F5', textAlign: 'center', zIndex: 6, boxShadow: '0 24px 50px rgba(0,0,0,.22)' }}>
                 <span style={{ fontFamily: 'var(--serif)', fontSize: 21, lineHeight: 1.05, padding: '0 16px' }}>{skills[active]?.category}</span>
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '.18em', textTransform: 'uppercase', opacity: .55, marginTop: 7 }}>{items.length} tools</span>
                 <span style={{ position: 'absolute', inset: -10, borderRadius: '50%', border: '1px solid var(--ink)', opacity: .25, animation: 'conPulse 3.4s ease-in-out infinite' }} />
               </div>
             </div>

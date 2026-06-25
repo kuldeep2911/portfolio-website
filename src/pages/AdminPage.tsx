@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { seedDatabase } from '../data/usePortfolioData'
+import { ongoing as staticOngoing } from '../data/portfolio'
 import type {
   ProfileData, BrainNode, ProjectData, SkillData, OngoingData, SocialLinkData
 } from '../data/usePortfolioData'
@@ -473,7 +474,15 @@ function OngoingTab() {
 
   useEffect(() => {
     supabase.from('ongoing_projects').select('*').order('sort_order').then(({ data }) => {
-      if (data) setItems(data)
+      if (data && data.length > 0) {
+        setItems(data)
+      } else {
+        // Fallback to static data so admin can see & re-save after a wipe
+        setItems(staticOngoing.map((o, i) => ({
+          id: o.id, title: o.title, icon: o.icon,
+          status: o.status, highlights: o.highlights, sort_order: i,
+        })))
+      }
       setLoading(false)
     })
   }, [])
@@ -481,7 +490,7 @@ function OngoingTab() {
   const save = async () => {
     await supabase.from('ongoing_projects').delete().neq('id', 'x')
     const toInsert = items.map((item, i) => {
-      const { id, updated_at, created_at, ...rest } = item as any
+      const { updated_at, created_at, ...rest } = item as any
       return { ...rest, sort_order: i }
     })
     const { error } = await supabase.from('ongoing_projects').insert(toInsert)
