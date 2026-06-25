@@ -97,97 +97,58 @@ create table if not exists messages (
   created_at timestamptz not null default now()
 );
 
--- Allow public read access (your portfolio is public)
-alter table profile enable row level security;
-alter table brain_nodes enable row level security;
-alter table projects enable row level security;
-alter table skills enable row level security;
-alter table ongoing_projects enable row level security;
-alter table social_links enable row level security;
-alter table messages enable row level security;
+-- ============================================================
+-- ROW-LEVEL SECURITY
+-- Model: content tables are publicly READABLE; only an authenticated
+-- admin can write. messages can be INSERTED by anyone (contact form)
+-- but only read/modified by an authenticated admin.
+-- ============================================================
 
-drop policy if exists "Public can read profile" on profile;
-create policy "Public can read profile" on profile for select using (true);
+-- Enable RLS on every table.
+alter table profile           enable row level security;
+alter table brain_nodes       enable row level security;
+alter table projects          enable row level security;
+alter table skills            enable row level security;
+alter table ongoing_projects  enable row level security;
+alter table social_links      enable row level security;
+alter table messages          enable row level security;
 
-drop policy if exists "Public can read brain_nodes" on brain_nodes;
-create policy "Public can read brain_nodes" on brain_nodes for select using (true);
+-- Self-healing: drop ALL existing policies on these tables first, so
+-- re-running this migration removes any stray/over-permissive policies
+-- (e.g. accidental "anon can write") and rebuilds the correct set.
+do $$
+declare r record;
+begin
+  for r in
+    select policyname, tablename
+    from pg_policies
+    where schemaname = 'public'
+      and tablename in (
+        'profile','brain_nodes','projects','skills',
+        'ongoing_projects','social_links','messages'
+      )
+  loop
+    execute format('drop policy if exists %I on public.%I', r.policyname, r.tablename);
+  end loop;
+end $$;
 
-drop policy if exists "Public can read projects" on projects;
-create policy "Public can read projects" on projects for select using (true);
+-- Content tables: public read, authenticated (admin) write.
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'profile','brain_nodes','projects','skills','ongoing_projects','social_links'
+  ]
+  loop
+    execute format('create policy "read_%1$s"   on public.%1$I for select using (true);', t);
+    execute format('create policy "insert_%1$s" on public.%1$I for insert to authenticated with check (true);', t);
+    execute format('create policy "update_%1$s" on public.%1$I for update to authenticated using (true) with check (true);', t);
+    execute format('create policy "delete_%1$s" on public.%1$I for delete to authenticated using (true);', t);
+  end loop;
+end $$;
 
-drop policy if exists "Public can read skills" on skills;
-create policy "Public can read skills" on skills for select using (true);
-
-drop policy if exists "Public can read ongoing" on ongoing_projects;
-create policy "Public can read ongoing" on ongoing_projects for select using (true);
-
-drop policy if exists "Public can read social" on social_links;
-create policy "Public can read social" on social_links for select using (true);
-
-drop policy if exists "Public can read messages" on messages;
-create policy "Authenticated can read messages" on messages for select to authenticated using (true);
-
--- Allow public inserts to messages
-drop policy if exists "Public can insert messages" on messages;
-create policy "Public can insert messages" on messages for insert with check (true);
-
--- Secure all policies (Requires Supabase Auth Login for any writes)
-drop policy if exists "Public can insert profile" on profile;
-create policy "Authenticated can insert profile" on profile for insert to authenticated with check (true);
-
-drop policy if exists "Public can update profile" on profile;
-create policy "Authenticated can update profile" on profile for update to authenticated using (true);
-
-drop policy if exists "Public can delete profile" on profile;
-create policy "Authenticated can delete profile" on profile for delete to authenticated using (true);
-
-drop policy if exists "Public can insert brain_nodes" on brain_nodes;
-create policy "Authenticated can insert brain_nodes" on brain_nodes for insert to authenticated with check (true);
-
-drop policy if exists "Public can update brain_nodes" on brain_nodes;
-create policy "Authenticated can update brain_nodes" on brain_nodes for update to authenticated using (true);
-
-drop policy if exists "Public can delete brain_nodes" on brain_nodes;
-create policy "Authenticated can delete brain_nodes" on brain_nodes for delete to authenticated using (true);
-
-drop policy if exists "Public can insert projects" on projects;
-create policy "Authenticated can insert projects" on projects for insert to authenticated with check (true);
-
-drop policy if exists "Public can update projects" on projects;
-create policy "Authenticated can update projects" on projects for update to authenticated using (true);
-
-drop policy if exists "Public can delete projects" on projects;
-create policy "Authenticated can delete projects" on projects for delete to authenticated using (true);
-
-drop policy if exists "Public can insert skills" on skills;
-create policy "Authenticated can insert skills" on skills for insert to authenticated with check (true);
-
-drop policy if exists "Public can update skills" on skills;
-create policy "Authenticated can update skills" on skills for update to authenticated using (true);
-
-drop policy if exists "Public can delete skills" on skills;
-create policy "Authenticated can delete skills" on skills for delete to authenticated using (true);
-
-drop policy if exists "Public can insert ongoing" on ongoing_projects;
-create policy "Authenticated can insert ongoing" on ongoing_projects for insert to authenticated with check (true);
-
-drop policy if exists "Public can update ongoing" on ongoing_projects;
-create policy "Authenticated can update ongoing" on ongoing_projects for update to authenticated using (true);
-
-drop policy if exists "Public can delete ongoing" on ongoing_projects;
-create policy "Authenticated can delete ongoing" on ongoing_projects for delete to authenticated using (true);
-
-drop policy if exists "Public can insert social" on social_links;
-create policy "Authenticated can insert social" on social_links for insert to authenticated with check (true);
-
-drop policy if exists "Public can update social" on social_links;
-create policy "Authenticated can update social" on social_links for update to authenticated using (true);
-
-drop policy if exists "Public can delete social" on social_links;
-create policy "Authenticated can delete social" on social_links for delete to authenticated using (true);
-
-drop policy if exists "Public can update messages" on messages;
-create policy "Authenticated can update messages" on messages for update to authenticated using (true);
-
-drop policy if exists "Public can delete messages" on messages;
-create policy "Authenticated can delete messages" on messages for delete to authenticated using (true);
+-- messages: anyone can submit the contact form; only admin can read/manage.
+create policy "insert_messages" on public.messages for insert with check (true);
+create policy "read_messages"   on public.messages for select to authenticated using (true);
+create policy "update_messages" on public.messages for update to authenticated using (true) with check (true);
+create policy "delete_messages" on public.messages for delete to authenticated using (true);
