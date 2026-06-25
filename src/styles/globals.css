@@ -1,15 +1,17 @@
 /* ─────────────────────────────────────────────
-   CSS Custom Properties — Design System Tokens
+   Design System Tokens — Editorial Light Theme
+   (matches the portfolio2.html reference design)
    ───────────────────────────────────────────── */
 :root {
-  --color-bg-primary:    #050508;
-  --color-bg-surface:    #0D0D14;
-  --color-bg-elevated:   #12121C;
-  --color-accent-red:    #E0003C;
-  --color-accent-pink:   #FF4D6D;
-  --color-accent-purple: #7B2FBE;
-  --color-text-primary:  #F0EEF8;
-  --color-text-secondary:#8B8B9E;
+  --bg:           #F7F7F5;
+  --bg-soft:      #F1F1EE;
+  --surface:      #FFFFFF;
+  --line:         #E5E5E0;
+  --ink:          #111111;
+  --ink-soft:     #5A5A5A;
+  --serif:        'Instrument Serif', Georgia, serif;
+  --sans:         'Hanken Grotesk', system-ui, sans-serif;
+  --mono:         'JetBrains Mono', monospace;
 }
 
 /* ─────────────────────────────────────────────
@@ -24,17 +26,16 @@
 }
 
 html {
-  background: var(--color-bg-primary);
+  background: var(--bg);
   scroll-behavior: smooth;
-  /* Custom scrollbar — Firefox */
   scrollbar-width: thin;
-  scrollbar-color: var(--color-accent-red) var(--color-bg-primary);
+  scrollbar-color: #C9C9C2 var(--bg);
 }
 
 body {
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
   font-weight: 400;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -45,52 +46,35 @@ body {
 /* ─────────────────────────────────────────────
    Custom Scrollbar — WebKit
    ───────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-bg-primary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-accent-red);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent-pink);
-}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #C9C9C2; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #B3B3AB; }
 
 /* ─────────────────────────────────────────────
    Text Selection
    ───────────────────────────────────────────── */
 ::selection {
-  background: var(--color-accent-red);
-  color: var(--color-text-primary);
+  background: var(--ink);
+  color: var(--bg);
 }
 
 /* ─────────────────────────────────────────────
-   Gradient Text Utilities
+   Shared keyframes
    ───────────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(180deg, #3D1520 0%, #E0003C 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); opacity: .5; }
+  50%      { transform: translateY(6px); opacity: 1; }
 }
-
-.gradient-text-bright {
-  background: linear-gradient(135deg, #E0003C, #FF4D6D);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ─────────────────────────────────────────────
    Focus visible (accessibility)
    ───────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--color-accent-red);
+  outline: 2px solid var(--ink);
   outline-offset: 3px;
 }

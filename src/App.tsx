@@ -1,58 +1,29 @@
-import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './styles/globals.css'
+import Sidebar from './components/Sidebar'
 import HeroSection from './components/HeroSection'
-import Navbar from './components/Navbar'
-import RobotIntroSection from './components/RobotIntroSection'
+import AboutSection from './components/AboutSection'
 import BrainMapSection from './components/BrainMapSection'
 import ProjectsSection from './components/ProjectsSection'
 import SkillsSection from './components/SkillsSection'
 import OngoingSection from './components/OngoingSection'
 import ContactSection from './components/ContactSection'
+import CursorCloud from './components/CursorCloud'
+import ErrorBoundary from './components/ErrorBoundary'
 import AdminPage from './pages/AdminPage'
 
 function Portfolio() {
-  const [scrollY, setScrollY] = useState(0)
-
-  useEffect(() => {
-    // Enable smooth scrolling
-    document.documentElement.style.scrollBehavior = 'smooth'
-
-    // Load Spline viewer script dynamically
-    const scriptId = 'spline-viewer-script'
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script')
-      script.id = scriptId
-      script.type = 'module'
-      script.src = 'https://unpkg.com/@splinetool/viewer@1.0.76/build/spline-viewer.js'
-      document.head.appendChild(script)
-    }
-
-    // Track scroll
-    const onScroll = () => setScrollY(window.scrollY)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      document.documentElement.style.scrollBehavior = 'auto'
-    }
-  }, [])
-
   return (
-    <div style={{ background: '#050508', minHeight: '100vh' }}>
-      <Navbar scrollY={scrollY} />
-      
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      <Sidebar />
       <HeroSection />
-
-      {/* Content section that lives below the 300vh hero scroll container */}
-      <div style={{ position: 'relative', zIndex: 20 }}>
-        <RobotIntroSection />
-        <BrainMapSection />
-        <ProjectsSection />
-        <SkillsSection />
-        <OngoingSection />
-        <ContactSection />
-      </div>
+      <AboutSection />
+      <BrainMapSection />
+      <ProjectsSection />
+      <SkillsSection />
+      <OngoingSection />
+      <ContactSection />
+      <CursorCloud />
     </div>
   )
 }
@@ -60,10 +31,12 @@ function Portfolio() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Portfolio />} />
-        <Route path="/admin" element={<AdminPage />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<Portfolio />} />
+          <Route path="/admin" element={<AdminPage />} />
+        </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

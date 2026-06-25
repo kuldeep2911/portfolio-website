@@ -1,80 +1,51 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { Github, Linkedin, FileText, Twitter, Globe } from 'lucide-react'
 import { usePortfolioData } from '../data/usePortfolioData'
 import { supabase } from '../lib/supabase'
-import Starfield from './Starfield'
+import Robot3D from './Robot3D'
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  GitHub: Github, LinkedIn: Linkedin, Resume: FileText, Twitter, Globe
+  GitHub: Github, LinkedIn: Linkedin, Resume: FileText, Twitter, HuggingFace: Globe,
 }
 
 export default function ContactSection() {
-  const robotRef = useRef<HTMLDivElement>(null)
-  const [bubbleVisible, setBubbleVisible] = useState(false)
-  const { socialLinks: dbLinks, profile } = usePortfolioData()
+  const { socialLinks, profile } = usePortfolioData()
 
-  // Build social links from Supabase data
-  const SOCIAL_LINKS = dbLinks.map(l => ({
-    icon: ICON_MAP[l.platform] ?? Globe,
+  const links = socialLinks.map(l => ({
+    Icon: ICON_MAP[l.platform] ?? Globe,
     label: l.platform,
     sub: l.handle,
     href: (!l.url.startsWith('http') && !l.url.startsWith('/') && !l.url.startsWith('mailto:')) ? `https://${l.url}` : l.url,
     download: l.platform === 'Resume',
   }))
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setBubbleVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.5 }
-    )
-
-    if (robotRef.current) {
-      observer.observe(robotRef.current)
-    }
-    return () => observer.disconnect()
-  }, [])
-
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
-  const [status, setStatus] = useState<'idle'|'sending'|'success'|'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setStatus('sending')
     try {
-      // 1. Save to Supabase (Admin Inbox)
       const { error } = await supabase.from('messages').insert([{ name, email, message }])
       if (error) throw error
 
-      // 2. Send Email Notification via Web3Forms (if key is configured)
       const web3FormsKey = import.meta.env.VITE_WEB3FORMS_KEY
       if (web3FormsKey) {
         await fetch('https://api.web3forms.com/submit', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({
             access_key: web3FormsKey,
             subject: `New Portfolio Message from ${name}`,
-            from_name: name,
-            email: email,
-            message: message,
+            from_name: name, email, message,
           }),
         })
       }
 
       setStatus('success')
-      setName('')
-      setEmail('')
-      setMessage('')
+      setName(''); setEmail(''); setMessage('')
       setTimeout(() => setStatus('idle'), 5000)
     } catch (err) {
       console.error(err)
@@ -82,321 +53,130 @@ export default function ContactSection() {
     }
   }
 
+  const inputStyle: React.CSSProperties = {
+    background: '#FFFFFF', border: '1px solid #E5E5E0', borderRadius: 12,
+    padding: '15px 16px', fontSize: 16, color: 'var(--ink)', fontFamily: 'inherit',
+    outline: 'none', transition: 'border-color .25s ease', width: '100%',
+  }
+  const labelTextStyle: React.CSSProperties = {
+    fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.18em', color: 'var(--ink-soft)', textTransform: 'uppercase',
+  }
+
   return (
-    <section
-      id="contact"
-      style={{
-        minHeight: '100vh',
-        background: '#050508',
-        padding: '100px 5vw 0',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      <Starfield />
+    <section id="contact" style={{
+      background: 'var(--bg-soft)', scrollMarginTop: 80, borderTop: '1px solid #E5E5E0',
+      padding: 'clamp(80px,12vh,150px) clamp(20px,6vw,80px)',
+    }}>
+      <style>{`
+        .contact-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: clamp(36px,5vw,72px); }
+        .form-input:focus, .form-textarea:focus { border-color: #111111 !important; }
+        .form-submit:hover { opacity: .85; }
+        .social-link:hover { border-color: #111111 !important; transform: translateY(-2px); }
+        .social-link:hover .social-icon { color: #111111 !important; }
+        .social-row { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+      `}</style>
 
-      <div style={{ position: 'relative', zIndex: 10, maxWidth: '1200px', margin: '0 auto' }}>
-        {/* ── TOP HEADER ── */}
-        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <div
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '0.65rem',
-              letterSpacing: '0.35em',
-              color: '#E0003C',
-              marginBottom: '0.75rem',
-            }}
-          >
-            GET IN TOUCH
-          </div>
-        <h2
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 'clamp(2.5rem, 5.5vw, 5rem)',
-            fontWeight: 700,
-            color: '#F0EEF8',
-            lineHeight: 1.05,
-            margin: 0,
-          }}
-        >
-          Let's build something
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '.32em', color: 'var(--ink-soft)', textTransform: 'uppercase', display: 'block' }}>Get in touch</span>
+        <h2 style={{ fontFamily: 'var(--serif)', fontWeight: 400, fontSize: 'clamp(40px,6.5vw,86px)', lineHeight: 1.03, letterSpacing: '-.015em', color: 'var(--ink)', margin: '16px 0 clamp(44px,7vh,72px)', maxWidth: '16ch' }}>
+          Let's build something remarkable together.
         </h2>
-        <h2
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 'clamp(2.5rem, 5.5vw, 5rem)',
-            fontWeight: 700,
-            lineHeight: 1.05,
-            margin: 0,
-            background: 'linear-gradient(135deg, #E0003C 0%, #FF4D6D 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          remarkable together.
-        </h2>
-      </div>
 
-      {/* ── SPLIT LAYOUT ── */}
-      <div className="contact-grid" style={{ display: 'grid', gap: '4rem', alignItems: 'start' }}>
-        <style>
-          {`
-            .contact-grid {
-              grid-template-columns: 1fr;
-            }
-            @media (min-width: 768px) {
-              .contact-grid {
-                grid-template-columns: 45% 55%;
-              }
-            }
-            .contact-input {
-              width: 100%;
-              background: rgba(13,13,20,0.8);
-              border: 1px solid rgba(255,255,255,0.08);
-              border-radius: 10px;
-              color: #F0EEF8;
-              font-family: 'Inter', sans-serif;
-              font-size: 0.9rem;
-              padding: 0 1rem;
-              outline: none;
-              transition: 200ms;
-              box-sizing: border-box;
-            }
-            .contact-input:focus {
-              border-color: rgba(224,0,60,0.45);
-              box-shadow: 0 0 0 3px rgba(224,0,60,0.07);
-            }
-            .submit-btn {
-              width: 100%;
-              height: 52px;
-              border-radius: 10px;
-              background: linear-gradient(123deg, #4A1280 0%, #E0003C 50%, #FF4D6D 100%);
-              color: white;
-              font-family: 'Space Grotesk', sans-serif;
-              font-size: 0.88rem;
-              font-weight: 600;
-              letter-spacing: 0.08em;
-              border: none;
-              cursor: pointer;
-              transition: all 200ms;
-            }
-            .submit-btn:hover {
-              filter: brightness(1.1);
-              transform: scale(1.015);
-              box-shadow: 0 8px 24px rgba(224,0,60,0.25);
-            }
-            .submit-btn:active {
-              transform: scale(0.99);
-            }
-            .social-link {
-              background: rgba(13,13,20,0.6);
-              border: 1px solid rgba(255,255,255,0.07);
-              border-radius: 14px;
-              padding: 1.25rem 2rem;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: 0.4rem;
-              text-decoration: none;
-              transition: 250ms;
-              min-width: 150px;
-              flex: 1;
-              max-width: 250px;
-            }
-            .social-link:hover {
-              border-color: rgba(224,0,60,0.32);
-              background: rgba(13,13,20,0.9);
-            }
-            .social-link:hover .social-icon {
-              color: #E0003C !important;
-            }
-          `}
-        </style>
+        <div className="contact-grid">
+          {/* visual */}
+          <div style={{ position: 'relative', minHeight: 380, border: '1px solid #E5E5E0', borderRadius: 20, background: 'radial-gradient(circle at 50% 40%, #F4F3F0 0%, #ECEBE6 100%)', overflow: 'hidden', boxShadow: '0 24px 60px -40px rgba(17,17,17,.24)' }}>
+            <Robot3D />
 
-        {/* LEFT SIDE: ROBOT */}
-        <div ref={robotRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
-          {/* Speech Bubble */}
-          <div
-            style={{
-              position: 'relative',
-              background: 'rgba(13, 13, 20, 0.9)',
-              border: '1.5px solid rgba(224, 0, 60, 0.3)',
-              borderRadius: '16px 16px 16px 4px',
-              padding: '1rem 1.25rem',
-              maxWidth: '280px',
-              marginBottom: '0.5rem',
-              fontFamily: "'Inter', sans-serif",
-              fontSize: '0.875rem',
-              fontStyle: 'italic',
-              color: 'rgba(240, 238, 248, 0.85)',
-              opacity: bubbleVisible ? 1 : 0,
-              transform: bubbleVisible ? 'translateY(0)' : 'translateY(10px)',
-              transition: 'opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s',
-            }}
-          >
-            "{profile?.contact_text || "I'll make sure Kuldeep reads your message first."}"
-          </div>
-
-          <div style={{ 
-            position: 'relative', 
-            width: '100%', 
-            height: '500px', 
-            overflow: 'hidden', 
-            borderRadius: '16px' 
-          }}>
-            <div style={{ position: 'absolute', top: '-70px', left: 0, width: '100%', height: 'calc(100% + 140px)' }}>
-              {/* @ts-ignore - custom element */}
-              <spline-viewer
-                url="https://prod.spline.design/VyeGLhLqmm9Ly0l1/scene.splinecode"
-                style={{ width: '100%', height: '100%', background: 'transparent' }}
-              />
+            {/* speech bubble — tucked into the top-left corner so it never overlaps the
+                centered robot; tail points down-right toward it. Glassmorphism + blur,
+                auto-sizes to the text (wraps for longer messages). */}
+            <div
+              className="speech-bubble"
+              style={{
+                position: 'absolute', top: '5%', left: '5%',
+                width: 'max-content', maxWidth: 'min(34%, 210px)', zIndex: 3,
+                background: 'rgba(255,255,255,0.5)',
+                backdropFilter: 'blur(10px) saturate(180%)', WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+                border: '1px solid rgba(255,255,255,0.65)', borderRadius: '16px 16px 4px 16px',
+                padding: '12px 15px', boxShadow: '0 16px 34px -18px rgba(17,17,17,.35)',
+                fontSize: 13.5, lineHeight: 1.5, color: 'var(--ink)', fontStyle: 'italic', textAlign: 'left',
+              }}
+            >
+              “{profile?.contact_text || 'Every great system starts with a conversation.'}”
+              {/* tail pointing down-right, toward the robot's face */}
+              <span style={{
+                position: 'absolute', bottom: -7, right: 20, transform: 'rotate(45deg)',
+                width: 14, height: 14,
+                background: 'rgba(255,255,255,0.5)',
+                backdropFilter: 'blur(10px) saturate(180%)', WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+                borderRight: '1px solid rgba(255,255,255,0.65)', borderBottom: '1px solid rgba(255,255,255,0.65)',
+              }} />
             </div>
+
+            <span style={{ position: 'absolute', bottom: 22, left: 24, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.22em', color: 'var(--ink-soft)', textTransform: 'uppercase' }}>
+              AI companion
+            </span>
           </div>
+
+          {/* form */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <span style={labelTextStyle}>Your name</span>
+              <input className="form-input" style={inputStyle} type="text" required value={name} onChange={e => setName(e.target.value)} disabled={status === 'sending'} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <span style={labelTextStyle}>Your email</span>
+              <input className="form-input" style={inputStyle} type="email" required value={email} onChange={e => setEmail(e.target.value)} disabled={status === 'sending'} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <span style={labelTextStyle}>Your message</span>
+              <textarea className="form-textarea" style={{ ...inputStyle, resize: 'vertical' }} rows={5} required value={message} onChange={e => setMessage(e.target.value)} disabled={status === 'sending'} />
+            </label>
+            <button type="submit" className="form-submit" disabled={status === 'sending'} style={{
+              background: 'var(--ink)', color: 'var(--bg)', border: 'none', borderRadius: 12,
+              padding: 17, fontSize: 15, letterSpacing: '.04em', cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity .25s ease',
+            }}>
+              {status === 'sending' ? 'Sending…' : status === 'success' ? 'Message sent ✓' : status === 'error' ? 'Error — try again' : 'Send message'}
+            </button>
+          </form>
         </div>
 
-        {/* RIGHT SIDE: CONTACT FORM */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div>
-            <label
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '0.62rem',
-                letterSpacing: '0.22em',
-                color: '#8B8B9E',
-                display: 'block',
-                marginBottom: '0.4rem',
-              }}
-            >
-              YOUR NAME
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="contact-input"
-              style={{ height: '52px' }}
-              required
-              disabled={status === 'sending'}
-            />
+        {/* social links */}
+        {links.length > 0 && (
+          <div className="social-row" style={{ borderTop: '1px solid #E5E5E0', paddingTop: 'clamp(36px,5vh,56px)', marginTop: 'clamp(44px,7vh,72px)' }}>
+            {links.map((l, i) => {
+              const Icon = l.Icon
+              return (
+                <a key={i} href={l.href} target="_blank" rel="noreferrer" download={l.download ? true : undefined}
+                  className="social-link"
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                    textDecoration: 'none', background: '#FFFFFF', border: '1px solid #E5E5E0',
+                    borderRadius: 16, padding: '20px 28px', minWidth: 150, flex: 1, maxWidth: 240,
+                    transition: 'border-color .25s ease, transform .25s ease',
+                  }}>
+                  <Icon className="social-icon" size={20} color="#5A5A5A" style={{ transition: 'color .25s ease' }} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{l.label}</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-soft)' }}>{l.sub}</span>
+                </a>
+              )
+            })}
           </div>
-
-          <div>
-            <label
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '0.62rem',
-                letterSpacing: '0.22em',
-                color: '#8B8B9E',
-                display: 'block',
-                marginBottom: '0.4rem',
-              }}
-            >
-              YOUR EMAIL
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="contact-input"
-              style={{ height: '52px' }}
-              required
-              disabled={status === 'sending'}
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '0.62rem',
-                letterSpacing: '0.22em',
-                color: '#8B8B9E',
-                display: 'block',
-                marginBottom: '0.4rem',
-              }}
-            >
-              YOUR MESSAGE
-            </label>
-            <textarea
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              className="contact-input"
-              style={{ height: '140px', padding: '0.85rem 1rem', resize: 'vertical' }}
-              required
-              disabled={status === 'sending'}
-            />
-          </div>
-
-          <button type="submit" className="submit-btn" disabled={status === 'sending'}>
-            {status === 'sending' ? 'SENDING...' : status === 'success' ? 'MESSAGE SENT!' : status === 'error' ? 'ERROR! TRY AGAIN' : 'SEND MESSAGE'}
-          </button>
-        </form>
+        )}
       </div>
 
-      {/* ── SOCIAL LINKS ROW ── */}
-      <div
-        style={{
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          paddingTop: '3rem',
-          marginTop: '4rem',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '1.25rem',
-          flexWrap: 'wrap',
-        }}
-      >
-        {SOCIAL_LINKS.map((link, idx) => {
-          const Icon = link.icon
-          return (
-            <a
-              key={idx}
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
-              download={link.download ? true : undefined}
-              className="social-link"
-            >
-              <Icon className="social-icon" size={20} color="#8B8B9E" style={{ transition: 'color 250ms' }} />
-              <span
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  color: '#F0EEF8',
-                  marginTop: '0.2rem',
-                }}
-              >
-                {link.label}
-              </span>
-              <span
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: '0.72rem',
-                  color: '#8B8B9E',
-                }}
-              >
-                {link.sub}
-              </span>
-            </a>
-          )
-        })}
-      </div>
-
-      {/* ── FOOTER ── */}
-      <footer
-        style={{
-          padding: '2rem 0',
-          textAlign: 'center',
-          fontFamily: "'Inter', sans-serif",
-          fontSize: '0.7rem',
-          color: 'rgba(255,255,255,0.2)',
-          letterSpacing: '0.06em',
-          marginTop: '2rem',
-        }}
-      >
-        © 2025 Kuldeep Kumar · AI/ML Engineer · Built with intelligence.
+      {/* footer */}
+      <footer style={{
+        borderTop: '1px solid #E5E5E0', marginTop: 'clamp(48px,8vh,80px)',
+        padding: '40px clamp(20px,6vw,80px) 0',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
+        maxWidth: 1200, marginLeft: 'auto', marginRight: 'auto',
+      }}>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 13, letterSpacing: '.18em', color: 'var(--ink)' }}>
+          {(profile?.name || 'KULDEEP KUMAR').toUpperCase()}
+        </span>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink-soft)' }}>© 2026 · AI / ML Engineer</span>
       </footer>
-      </div>
     </section>
   )
 }

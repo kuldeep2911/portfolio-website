@@ -1,297 +1,209 @@
-import { useEffect, useRef, useState } from 'react'
-import LoadingScreen from './LoadingScreen'
+import { useEffect, useRef } from 'react'
+import { makeBrain } from '../lib/particles'
+import { usePortfolioData } from '../data/usePortfolioData'
 
-// ── Config ────────────────────────────────────────────────────────────────────
-const TOTAL_FRAMES = 240
-const FRAME_FOLDER = '/ezgif-6a023c42befa4775-jpg'
-const FRAME_PREFIX = 'ezgif-frame-'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const THREE = () => (window as any).THREE
 
-// How many viewport-heights of scroll it takes to play all 240 frames.
-// 3.5 = animation completes after scrolling 3.5 × viewport height — cinematic pace.
-// The 300vh scroll container still exists, so content beyond the animation is reachable.
-const HERO_SCROLL_VH = 2.5
-
-// Frame window during which the text overlay is visible (1-indexed, inclusive)
-const TEXT_FRAME_IN = 0         // heroP at which text starts fading in
-const TEXT_FRAME_OUT = 100 / 239  // heroP at which text finishes fading out (~frame 80)
-
-function pad3(n: number) {
-  return String(n).padStart(3, '0')
-}
-
-// ── object-fit:cover equivalent for canvas ────────────────────────────────────
-function drawCover(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  cw: number,
-  ch: number,
-) {
-  const iw = img.naturalWidth
-  const ih = img.naturalHeight
-  if (!iw || !ih) return
-
-  // Scale so the image FILLS the canvas (cover, not contain)
-  const scale = Math.max(cw / iw, ch / ih)
-  const sw = cw / scale          // source width after scaling
-  const sh = ch / scale          // source height after scaling
-  const sx = (iw - sw) / 2      // center-crop x
-  const sy = (ih - sh) / 2      // center-crop y
-
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch)
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
+// ============================================================
+//  HERO — Three.js particle morph (ported from portfolio2.html)
+//  Scatter → sphere → brain → dissolve → network → architecture
+//  driven by scroll over a 340vh sticky section.
+// ============================================================
 export default function HeroSection() {
+  const { profile } = usePortfolioData()
+  const sectionRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const overlayRef = useRef<HTMLDivElement>(null)
-  const framesRef = useRef<HTMLImageElement[]>([])
-  const isReadyRef = useRef(false)
-  const lastIdxRef = useRef(-1)
+  const msg0Ref = useRef<HTMLDivElement>(null)
+  const msg1Ref = useRef<HTMLDivElement>(null)
+  const msg2Ref = useRef<HTMLDivElement>(null)
+  const hintRef = useRef<HTMLDivElement>(null)
 
-  const [progress, setProgress] = useState(0)
-  const [isLoaded, setIsLoaded] = useState(false)
-
-  // ── Set canvas pixel dimensions to match viewport ──────────────────────────
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const T = THREE()
+    if (!T) { console.warn('Three.js not loaded'); return }
+    const cv = canvasRef.current!
+    const heroEl = sectionRef.current!
+    const msg0 = msg0Ref.current!, msg1 = msg1Ref.current!, msg2 = msg2Ref.current!, hint = hintRef.current!
 
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+    let W = cv.clientWidth, H = cv.clientHeight
+    const scene = new T.Scene()
+    const camera = new T.PerspectiveCamera(50, W / H, 0.1, 100)
+    camera.position.set(0, 0, 6.2)
+    const renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true })
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio))
+    renderer.setSize(W, H, false)
 
-      // Re-draw current frame at new resolution
-      const idx = Math.max(lastIdxRef.current, 0)
-      const img = framesRef.current[idx]
-      if (img?.naturalWidth) {
-        const ctx = canvas.getContext('2d')
-        if (ctx) drawCover(ctx, img, canvas.width, canvas.height)
-      }
+    const P = window.innerWidth < 768 ? 4200 : 7200
+
+    function randn() {
+      let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random()
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
     }
 
-    resize()
-    window.addEventListener('resize', resize)
-    return () => window.removeEventListener('resize', resize)
-  }, [])
+    const NN = 46, nodes: number[][] = []
+    for (let i = 0; i < NN; i++) nodes.push([(Math.random() - .5) * 3.6, (Math.random() - .5) * 2.6, (Math.random() - .5) * 3.0])
 
-  // ── Preload all frames ─────────────────────────────────────────────────────
-  useEffect(() => {
-    const images: HTMLImageElement[] = Array.from({ length: TOTAL_FRAMES }, () => new Image())
-    let done = 0
+    const scatter = new Float32Array(P * 3), sphere = new Float32Array(P * 3),
+      brainC = new Float32Array(P * 3), brainD = new Float32Array(P * 3),
+      dissolve = new Float32Array(P * 3), network = new Float32Array(P * 3),
+      arch = new Float32Array(P * 3)
 
-    images.forEach((img, i) => {
-      img.onload = img.onerror = () => {
-        done++
-        setProgress(Math.round((done / TOTAL_FRAMES) * 100))
+    const cols = 5, colX = [-2.2, -1.1, 0, 1.1, 2.2], gridN = Math.ceil(Math.sqrt(P / cols))
 
-        if (done === TOTAL_FRAMES) {
-          framesRef.current = images
-          isReadyRef.current = true
-
-          // Draw frame 0 before the loading screen fades so canvas isn't blank
-          const canvas = canvasRef.current
-          const ctx = canvas?.getContext('2d')
-          if (ctx && canvas && images[0]?.naturalWidth) {
-            drawCover(ctx, images[0], canvas.width, canvas.height)
-          }
-
-          setIsLoaded(true)
-        }
-      }
-      img.src = `${FRAME_FOLDER}/${FRAME_PREFIX}${pad3(i + 1)}.jpg`
-    })
-
-    // No cleanup needed — image loading is idempotent on re-mount
-  }, [])
-
-  // ── Scroll → canvas render (pure DOM, zero React re-renders) ───────────────
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    let raf = 0
-
-    const render = () => {
-      if (!isReadyRef.current) return
-
-      const scrollY = window.scrollY
-      const vh = window.innerHeight
-
-      // Progress: 0 → 1 over the first HERO_SCROLL_VH viewport-heights of scroll
-      const raw = scrollY / (vh * HERO_SCROLL_VH)
-      const heroP = Math.min(Math.max(raw, 0), 1)
-
-      // ── Text overlay opacity: visible frames 1–80, then gone ──────────────
-      const overlay = overlayRef.current
-      if (overlay) {
-        const fadeInEnd = TEXT_FRAME_IN + (10 / 239)   // fade in over first 10 frames
-        const fadeOutStart = TEXT_FRAME_OUT - (12 / 239) // start fading out 12 frames before frame 80
-        let op = 0
-        if (heroP <= TEXT_FRAME_IN) {
-          op = 0
-        } else if (heroP < fadeInEnd) {
-          op = (heroP - TEXT_FRAME_IN) / (fadeInEnd - TEXT_FRAME_IN)
-        } else if (heroP < fadeOutStart) {
-          op = 1
-        } else if (heroP < TEXT_FRAME_OUT) {
-          op = 1 - (heroP - fadeOutStart) / (TEXT_FRAME_OUT - fadeOutStart)
-        } else {
-          op = 0
-        }
-        overlay.style.opacity = String(Math.max(0, Math.min(1, op)))
-      }
-
-      // ── Draw the correct frame ─────────────────────────────────────────────
-      const idx = Math.min(Math.floor(heroP * (TOTAL_FRAMES - 1)), TOTAL_FRAMES - 1)
-      const frame = framesRef.current[idx]
-
-      if (idx !== lastIdxRef.current && frame?.naturalWidth) {
-        lastIdxRef.current = idx
-        const ctx = canvas.getContext('2d')
-        if (ctx) drawCover(ctx, frame, canvas.width, canvas.height)
-      }
+    for (let i = 0; i < P; i++) {
+      const o = i * 3
+      scatter[o] = (Math.random() - .5) * 7; scatter[o + 1] = (Math.random() - .5) * 4.4; scatter[o + 2] = (Math.random() - .5) * 4.4
+      let dx = randn(), dy = randn(), dz = randn(); const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1; dx /= len; dy /= len; dz /= len
+      const sr = 1.5 + (Math.random() - .5) * .18
+      sphere[o] = dx * sr; sphere[o + 1] = dy * sr; sphere[o + 2] = dz * sr
+      const dr = 3.4 + Math.random() * 1.2
+      dissolve[o] = dx * dr; dissolve[o + 1] = dy * dr * 0.7; dissolve[o + 2] = dz * dr
+      const nd = nodes[i % NN]
+      network[o] = nd[0] + randn() * 0.13; network[o + 1] = nd[1] + randn() * 0.13; network[o + 2] = nd[2] + randn() * 0.13
+      const c = i % cols, idx = Math.floor(i / cols) % (gridN * gridN)
+      const gy2 = Math.floor(idx / gridN), gz = idx % gridN
+      arch[o] = colX[c] + randn() * 0.03
+      arch[o + 1] = ((gy2 / (gridN - 1)) - .5) * 2.6 + randn() * 0.02
+      arch[o + 2] = ((gz / (gridN - 1)) - .5) * 2.6 + randn() * 0.02
     }
+    // anatomical lateral brain (shared generator) — slightly scaled up for the hero
+    const _brain = makeBrain(P, { thick: 0.22, scatter: 0.04 })
+    for (let k = 0; k < _brain.length; k++) {
+      const v = _brain[k] * 1.18
+      brainD[k] = v
+      brainC[k] = v + (Math.random() - 0.5) * 0.18
+    }
+    const TARGETS = [scatter, sphere, brainC, brainD, dissolve, network, arch]
+
+    const pos = new Float32Array(P * 3); pos.set(scatter)
+    const geo = new T.BufferGeometry()
+    geo.setAttribute('position', new T.BufferAttribute(pos, 3))
+    const mat = new T.PointsMaterial({ color: 0x111111, size: 0.022, sizeAttenuation: true, transparent: true, opacity: .82 })
+    const points = new T.Points(geo, mat)
+    const group = new T.Group()
+    group.add(points)
+    group.rotation.x = -0.12
+    scene.add(group)
+
+    // network lines
+    const segs: number[] = []
+    for (let a = 0; a < nodes.length; a++) for (let b = a + 1; b < nodes.length; b++) {
+      const dx = nodes[a][0] - nodes[b][0], dy = nodes[a][1] - nodes[b][1], dz = nodes[a][2] - nodes[b][2]
+      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < 1.35) segs.push(...nodes[a], ...nodes[b])
+    }
+    const lgeo = new T.BufferGeometry()
+    lgeo.setAttribute('position', new T.BufferAttribute(new Float32Array(segs), 3))
+    const lmat = new T.LineBasicMaterial({ color: 0x111111, transparent: true, opacity: 0 })
+    group.add(new T.LineSegments(lgeo, lmat))
+
+    let sp = 0, dp = 0
+    function smooth(t: number) { return t * t * (3 - 2 * t) }
 
     const onScroll = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(render)
+      const total = heroEl.offsetHeight - window.innerHeight
+      const scrolled = -heroEl.getBoundingClientRect().top
+      sp = Math.max(0, Math.min(1, scrolled / Math.max(1, total)))
     }
-
-    // Render as soon as frames are ready (handles the page-load / zero-scroll case)
-    const pollReady = () => {
-      if (isReadyRef.current) {
-        render()
-      } else {
-        raf = requestAnimationFrame(pollReady)
-      }
-    }
-    pollReady()
-
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      cancelAnimationFrame(raf)
+
+    const onResize = () => {
+      W = cv.clientWidth; H = cv.clientHeight
+      renderer.setSize(W, H, false)
+      camera.aspect = W / H
+      camera.updateProjectionMatrix()
     }
-  }, []) // runs once — all mutable state lives in refs
+    window.addEventListener('resize', onResize, { passive: true })
 
-  // ── JSX ────────────────────────────────────────────────────────────────────
+    function fade(p: number, s: number, f1: number, f2: number, e: number) {
+      if (p < s || p > e) return 0
+      if (p < f1) return (p - s) / (f1 - s)
+      if (p > f2) return 1 - (p - f2) / (e - f2)
+      return 1
+    }
+
+    let raf = 0
+    function animate() {
+      raf = requestAnimationFrame(animate)
+      dp += (sp - dp) * 0.08
+      const p = dp
+      const sf = p * (TARGETS.length - 1)
+      let seg = Math.floor(sf); if (seg > TARGETS.length - 2) seg = TARGETS.length - 2
+      const t = smooth(sf - seg)
+      const A = TARGETS[seg], B = TARGETS[seg + 1]
+      const arr = geo.attributes.position.array as Float32Array
+      for (let i = 0; i < arr.length; i++) arr[i] = A[i] + (B[i] - A[i]) * t
+      geo.attributes.position.needsUpdate = true
+      const brainView = Math.max(0, 1 - Math.abs(p - 0.42) / 0.18)
+      group.rotation.y += 0.0015 * (1 - 0.75 * brainView)
+      lmat.opacity = Math.max(0, Math.min(1, (p - 0.74) / 0.12)) * 0.16
+
+      msg0.style.opacity = String(fade(p, -1, -1, 0.30, 0.42))
+      msg1.style.opacity = String(fade(p, 0.40, 0.48, 0.62, 0.72))
+      msg2.style.opacity = String(fade(p, 0.74, 0.82, 1.1, 1.1))
+      hint.style.opacity = String(Math.max(0, 1 - p * 6))
+      renderer.render(scene, camera)
+    }
+    onScroll()
+    animate()
+
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onResize)
+      renderer.dispose()
+      geo.dispose(); mat.dispose(); lgeo.dispose(); lmat.dispose()
+    }
+  }, [])
+
+  const name = profile?.name || 'Kuldeep Kumar'
+
   return (
-    <>
-      <LoadingScreen isLoaded={isLoaded} progress={progress} />
+    <section ref={sectionRef} id="hero" style={{ position: 'relative', height: '340vh', background: 'var(--bg)' }}>
+      <div style={{ position: 'sticky', top: 0, height: '100vh', width: '100%', overflow: 'hidden' }}>
+        <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(circle at 50% 46%, rgba(247,247,245,0) 30%, rgba(247,247,245,.5) 78%)',
+        }} />
 
-      {/* Canvas: fixed, full-screen, behind everything */}
-      <canvas
-        ref={canvasRef}
-        id="hero-canvas"
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          zIndex: 0,
-          display: 'block',
-        }}
-      />
+        {/* eyebrow */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', paddingTop: 'clamp(96px,14vh,150px)', pointerEvents: 'none' }}>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '.42em', color: 'var(--ink-soft)', textTransform: 'uppercase' }}>
+            AI / ML&nbsp;·&nbsp;{name}
+          </span>
+        </div>
 
-      {/* Gradient vignette overlay */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 5,
-          pointerEvents: 'none',
-          background: 'linear-gradient(to bottom, rgba(5,5,8,0.3) 0%, transparent 30%, transparent 70%, rgba(5,5,8,0.9) 100%)',
-        }}
-      />
+        {/* morphing messages */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ position: 'relative', width: 'min(92vw,1100px)', height: '40vh', textAlign: 'center' }}>
+            {[
+              { ref: msg0Ref, op: 1, html: <>Everything begins<br />with a thought.</> },
+              { ref: msg1Ref, op: 0, html: <>From research<br />to reality.</> },
+              { ref: msg2Ref, op: 0, html: <>Building intelligent<br />systems.</> },
+            ].map((m, i) => (
+              <div
+                key={i}
+                ref={m.ref}
+                style={{
+                  position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--serif)', fontWeight: 400,
+                  fontSize: 'clamp(44px,8.2vw,124px)', lineHeight: 1.02, letterSpacing: '-.01em',
+                  color: 'var(--ink)', transition: 'opacity .6s ease', opacity: m.op,
+                }}
+              >
+                {m.html}
+              </div>
+            ))}
+          </div>
+        </div>
 
-      {/*
-        Scroll spacer — 300vh tall so the page is scrollable.
-        position:relative keeps it in normal flow so it contributes to page height.
-      */}
-      <div
-        id="hero-scroll-container"
-        style={{ position: 'relative', height: '300vh', zIndex: 1 }}
-        aria-label="Hero scroll section"
-      />
-
-      {/*
-        Quote overlay — pinned to the LEFT side of the viewport so it never
-        overlaps the brain (which sits centre/right in the frame).
-        Opacity is driven entirely by DOM mutation — no React re-renders.
-      */}
-      <div
-        ref={overlayRef}
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '5vw',
-          transform: 'translateY(-50%)',
-          zIndex: 10,
-          pointerEvents: 'none',
-          opacity: 0,
-          willChange: 'opacity',
-          maxWidth: '38vw',   // keeps text well left of the brain
-        }}
-      >
-        {/* Futuristic accent line above */}
-        <div
-          style={{
-            width: '48px',
-            height: '2px',
-            background: 'linear-gradient(90deg, #E0003C, transparent)',
-            marginBottom: '1.2rem',
-          }}
-        />
-
-        {/* Main quote */}
-        <p
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 'clamp(2.2rem, 4.5vw, 5rem)',
-            fontWeight: 700,
-            lineHeight: 1.05,
-            letterSpacing: '-0.02em',
-            margin: 0,
-            color: '#F0EEF8',
-            textShadow: '0 0 40px rgba(224,0,60,0.45), 0 0 80px rgba(224,0,60,0.2)',
-          }}
-        >
-          Everything<br />
-          begins<br />
-          in the<br />
-          mind.
-        </p>
-
-        {/* Futuristic sub-label */}
-        <p
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)',
-            fontWeight: 400,
-            letterSpacing: '0.35em',
-            textTransform: 'uppercase',
-            color: '#E0003C',
-            margin: '1.4rem 0 0',
-            opacity: 0.85,
-          }}
-        >
-          AI / ML · KULDEEP KUMAR
-        </p>
-
-        {/* Vertical accent rule */}
-        <div
-          style={{
-            width: '1px',
-            height: '56px',
-            background: 'linear-gradient(to bottom, #E0003C, transparent)',
-            marginTop: '1.2rem',
-          }}
-        />
+        {/* scroll hint */}
+        <div ref={hintRef} style={{ position: 'absolute', bottom: 34, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, pointerEvents: 'none', transition: 'opacity .5s ease' }}>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.3em', color: 'var(--ink-soft)', textTransform: 'uppercase' }}>Scroll</span>
+          <span style={{ width: 1, height: 30, background: 'linear-gradient(#111,transparent)', animation: 'floaty 2.4s ease-in-out infinite' }} />
+        </div>
       </div>
-    </>
+    </section>
   )
 }

@@ -55,36 +55,36 @@ function AboutTab() {
 
   const updateLine = (i: number, val: string) => {
     if (!profile) return
-    const lines = [...profile.robot_lines]
+    const lines = [...(profile.robot_lines || [])]
     lines[i] = val
     setProfile({ ...profile, robot_lines: lines })
   }
 
   const addLine = () => {
     if (!profile) return
-    setProfile({ ...profile, robot_lines: [...profile.robot_lines, ''] })
+    setProfile({ ...profile, robot_lines: [...(profile.robot_lines || []), ''] })
   }
 
   const removeLine = (i: number) => {
     if (!profile) return
-    const lines = profile.robot_lines.filter((_, idx) => idx !== i)
+    const lines = (profile.robot_lines || []).filter((_, idx) => idx !== i)
     setProfile({ ...profile, robot_lines: lines })
   }
 
   const updateStat = (i: number, key: 'value' | 'label', val: string) => {
     if (!profile) return
-    const stats = profile.stats.map((s, idx) => idx === i ? { ...s, [key]: val } : s)
+    const stats = (profile.stats || []).map((s, idx) => idx === i ? { ...s, [key]: val } : s)
     setProfile({ ...profile, stats })
   }
 
   const addStat = () => {
     if (!profile) return
-    setProfile({ ...profile, stats: [...profile.stats, { value: '', label: '' }] })
+    setProfile({ ...profile, stats: [...(profile.stats || []), { value: '', label: '' }] })
   }
 
   const removeStat = (i: number) => {
     if (!profile) return
-    const stats = profile.stats.filter((_, idx) => idx !== i)
+    const stats = (profile.stats || []).filter((_, idx) => idx !== i)
     setProfile({ ...profile, stats })
   }
 
@@ -131,7 +131,7 @@ function AboutTab() {
 
       <div style={s.section}>
         <h3 style={s.h3}>Robot Speech Lines (Hero Section)</h3>
-        {profile.robot_lines.map((line, i) => (
+        {(profile.robot_lines || []).map((line, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <textarea style={{ ...s.textarea, marginBottom: 0, flex: 1 }} value={line} onChange={e => updateLine(i, e.target.value)} rows={2} />
             <button style={s.btnDanger} onClick={() => removeLine(i)}>✕</button>
@@ -152,7 +152,7 @@ function AboutTab() {
 
       <div style={s.section}>
         <h3 style={s.h3}>Stats Row (about section)</h3>
-        {profile.stats.map((stat, i) => (
+        {(profile.stats || []).map((stat, i) => (
           <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 8, alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
               <label style={s.label}>Value</label>
@@ -341,7 +341,7 @@ function ProjectsTab() {
                 </div>
               </div>
               <label style={s.label}>Tags (comma-separated)</label>
-              <input style={s.input} value={p.tags.join(',')} onChange={e => update(i, 'tags', e.target.value.split(','))} />
+              <input style={s.input} value={(p.tags || []).join(',')} onChange={e => update(i, 'tags', e.target.value.split(','))} />
               <label style={s.label}>GitHub URL</label>
               <input style={s.input} value={p.github_url || ''} onChange={e => update(i, 'github_url', e.target.value)} />
               <label style={s.label}>Demo URL</label>
@@ -366,7 +366,7 @@ function ProjectsTab() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button style={s.btn} onClick={() => {
-                  const pToSave = { ...p, tags: p.tags.map(t => t.trim()).filter(Boolean) }
+                  const pToSave = { ...p, tags: (p.tags || []).map(t => t.trim()).filter(Boolean) }
                   save(pToSave)
                 }}>Save</button>
                 <button style={s.btnDanger} onClick={() => remove(p.id)}>Delete Project</button>
@@ -417,7 +417,7 @@ function SkillsTab() {
 
   const addItem = (gi: number) => {
     setSkillGroups(skillGroups.map((sg, idx) => idx === gi ? {
-      ...sg, items: [...sg.items, { name: 'New Skill', proficiency: 80 }]
+      ...sg, items: [...(sg.items || []), { name: 'New Skill', proficiency: 80 }]
     } : sg))
   }
 
@@ -445,7 +445,7 @@ function SkillsTab() {
             </div>
             <button style={{ ...s.btnDanger, alignSelf: 'flex-end' }} onClick={() => setSkillGroups(skillGroups.filter((_, idx) => idx !== gi))}>Remove Group</button>
           </div>
-          {sg.items.map((item, ii) => (
+          {(sg.items || []).map((item, ii) => (
             <div key={ii} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
               <input style={{ ...s.input, flex: 3, marginBottom: 0 }} placeholder="Skill name" value={item.name} onChange={e => updateItem(gi, ii, 'name', e.target.value)} />
               <input style={{ ...s.input, flex: 1, marginBottom: 0 }} type="number" min={0} max={100} placeholder="0-100" value={item.proficiency} onChange={e => updateItem(gi, ii, 'proficiency', +e.target.value)} />
@@ -501,7 +501,7 @@ function OngoingTab() {
 
   const addHighlight = (gi: number) => {
     setItems(items.map((item, idx) => idx === gi ? {
-      ...item, highlights: [...item.highlights, '']
+      ...item, highlights: [...(item.highlights || []), '']
     } : item))
   }
 
@@ -542,7 +542,7 @@ function OngoingTab() {
             </div>
           </div>
           <label style={s.label}>Highlights</label>
-          {item.highlights.map((h, hi) => (
+          {(item.highlights || []).map((h, hi) => (
             <div key={hi} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
               <input style={{ ...s.input, flex: 1, marginBottom: 0 }} value={h} onChange={e => updateHighlight(i, hi, e.target.value)} />
               <button style={s.btnDanger} onClick={() => removeHighlight(i, hi)}>✕</button>
@@ -736,16 +736,27 @@ export default function AdminPage() {
   const [isAuthLoading, setIsAuthLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let settled = false
+    const settle = (session: unknown) => {
       setAuthed(!!session)
       setIsAuthLoading(false)
-    })
+      settled = true
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthed(!!session)
-    })
+    // onAuthStateChange fires immediately with the INITIAL_SESSION event in
+    // supabase-js v2 — the most reliable way to resolve the initial auth state.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => settle(session))
 
-    return () => subscription.unsubscribe()
+    // Backup path + explicit error handling so a hanging/rejected getSession()
+    // can never leave the UI stuck on the loading screen.
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => settle(session))
+      .catch(() => setIsAuthLoading(false))
+
+    // Final safety net: always show the login form within a few seconds.
+    const timer = setTimeout(() => { if (!settled) setIsAuthLoading(false) }, 4000)
+
+    return () => { subscription.unsubscribe(); clearTimeout(timer) }
   }, [])
 
   const login = async () => {
@@ -757,7 +768,11 @@ export default function AdminPage() {
   }
 
   if (isAuthLoading) {
-    return <div style={{ minHeight: '100vh', background: '#0a0a0a' }} />
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif", fontSize: 14 }}>
+        Loading…
+      </div>
+    )
   }
 
   if (!authed) {
@@ -798,6 +813,12 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: "'Inter', sans-serif" }}>
+      {/* The global site ::selection is near-black, which is invisible on this dark
+          admin (black-on-black). Override it so text selection is clearly visible. */}
+      <style>{`
+        ::selection { background: #2f6fed; color: #fff; }
+        input, textarea { -webkit-user-select: text; user-select: text; }
+      `}</style>
       {/* Header */}
       <div style={{ background: '#111', borderBottom: '1px solid #222', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>

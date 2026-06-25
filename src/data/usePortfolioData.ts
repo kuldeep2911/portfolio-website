@@ -235,6 +235,9 @@ export async function seedDatabase() {
     id: undefined,
   })
 
+  // brain_nodes uses an auto-generated identity id, so we must clear existing
+  // rows first — otherwise re-running setup keeps appending duplicate areas.
+  await supabase.from('brain_nodes').delete().neq('id', 0)
   for (let i = 0; i < STATIC_BRAIN_NODES.length; i++) {
     await supabase.from('brain_nodes').insert({ ...STATIC_BRAIN_NODES[i], sort_order: i })
   }
