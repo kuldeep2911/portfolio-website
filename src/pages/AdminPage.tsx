@@ -184,7 +184,7 @@ function BrainMapTab() {
   const ICONS = ['Brain', 'Database', 'Activity', 'Network', 'MessageSquare', 'FileText', 'Code', 'Cpu', 'Eye', 'Server']
 
   useEffect(() => {
-    supabase.from('brain_nodes').select('*').order('sort_order').then(({ data }) => {
+    supabase.from('brain_nodes').select('*').order('sort_order').order('id').then(({ data }) => {
       if (data) setNodes(data)
       setLoading(false)
     })
@@ -260,7 +260,7 @@ function ProjectsTab() {
   const [expanded, setExpanded] = useState<number | null>(0)
 
   useEffect(() => {
-    supabase.from('projects').select('*').order('sort_order').then(({ data }) => {
+    supabase.from('projects').select('*').order('sort_order').order('id').then(({ data }) => {
       if (data) setProjects(data)
       setLoading(false)
     })
@@ -297,7 +297,9 @@ function ProjectsTab() {
     <div>
       {toast && <Toast {...toast} />}
       {projects.map((p, i) => (
-        <div key={p.id} style={{ ...s.section, marginBottom: 12 }}>
+        // Key by index, NOT p.id — the id is editable, and keying by it would
+        // remount the row on every keystroke and drop input focus.
+        <div key={i} style={{ ...s.section, marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
             onClick={() => setExpanded(expanded === i ? null : i)}>
             <h3 style={{ ...s.h3, margin: 0 }}>{p.title} <span style={{ color: '#555', fontSize: 13, fontWeight: 400 }}>({p.year})</span></h3>
@@ -389,7 +391,7 @@ function SkillsTab() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('skills').select('*').order('sort_order').then(({ data }) => {
+    supabase.from('skills').select('*').order('sort_order').order('id').then(({ data }) => {
       if (data) setSkillGroups(data)
       setLoading(false)
     })
@@ -473,7 +475,7 @@ function OngoingTab() {
   const ICONS = ['Network', 'Bot', 'Cpu', 'Brain', 'Code', 'Database', 'Activity', 'Server', 'Eye']
 
   useEffect(() => {
-    supabase.from('ongoing_projects').select('*').order('sort_order').then(({ data }) => {
+    supabase.from('ongoing_projects').select('*').order('sort_order').order('id').then(({ data }) => {
       if (data && data.length > 0) {
         setItems(data)
       } else {
@@ -579,7 +581,7 @@ function ContactTab() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('social_links').select('*').order('sort_order').then(({ data }) => {
+    supabase.from('social_links').select('*').order('sort_order').order('id').then(({ data }) => {
       if (data) setLinks(data)
       setLoading(false)
     })

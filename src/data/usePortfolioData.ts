@@ -194,11 +194,11 @@ export function usePortfolioData(): PortfolioData {
           profileRes, nodesRes, projectsRes, skillsRes, ongoingRes, socialRes
         ] = await Promise.all([
           supabase.from('profile').select('*').limit(1).single(),
-          supabase.from('brain_nodes').select('*').order('sort_order'),
-          supabase.from('projects').select('*').order('sort_order'),
-          supabase.from('skills').select('*').order('sort_order'),
-          supabase.from('ongoing_projects').select('*').order('sort_order'),
-          supabase.from('social_links').select('*').order('sort_order'),
+          supabase.from('brain_nodes').select('*').order('sort_order').order('id'),
+          supabase.from('projects').select('*').order('sort_order').order('id'),
+          supabase.from('skills').select('*').order('sort_order').order('id'),
+          supabase.from('ongoing_projects').select('*').order('sort_order').order('id'),
+          supabase.from('social_links').select('*').order('sort_order').order('id'),
         ])
 
         setData({
