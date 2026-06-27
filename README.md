@@ -31,7 +31,9 @@ A fully content-managed, animated personal portfolio for an AI/ML engineer. It p
 - **Three.js particle hero** that morphs (scatter → sphere → brain → network → architecture) as you scroll.
 - **Neural-map section** — a 3D particle brain with admin-positioned labels and curved connector wires.
 - **3D companion robot** (Three.js) in the About and Contact sections whose head tracks the cursor, with a glassmorphism speech bubble.
-- **Horizontal scroll-jacking projects** carousel (Framer Motion) with bento metric cards.
+- **Horizontal-swipe projects** — a scroll-driven pinned track where each editorial card slides in with a scale + subtle 3D rotate, with a progress counter and dots.
+- **Skills constellation** — hovering a category orbits its skills (names only) around a central hub in 3D.
+- **Expanding-focus "Currently building"** — a row of cards that expand on hover to reveal their highlights.
 - **ChatGPT-style vertical sidebar nav** — minimal bars that reveal section names on hover, scroll on click, and auto-hide over the Projects section.
 - **Typewriter intro** in the About section.
 - **Live CMS** — edit profile, neural-map nodes, projects, skills, ongoing work, social links, and read contact messages from `/admin`.
@@ -48,7 +50,7 @@ A fully content-managed, animated personal portfolio for an AI/ML engineer. It p
 | Framework | React 18 + TypeScript |
 | Build tool | Vite 8 |
 | Styling | CSS custom properties + inline styles (no UI framework) |
-| Animation | Three.js (r128, via CDN), Framer Motion, Canvas 2D |
+| Animation | Three.js (r128, via CDN), Canvas 2D, custom scroll-driven JS |
 | Routing | React Router |
 | Backend / DB | Supabase (PostgreSQL + Auth + Row-Level Security) |
 | Email (optional) | Web3Forms |
@@ -106,9 +108,9 @@ A fully content-managed, animated personal portfolio for an AI/ML engineer. It p
     │   ├── HeroSection.tsx        # Three.js particle morph hero
     │   ├── AboutSection.tsx       # Typewriter intro + robot + stats
     │   ├── BrainMapSection.tsx    # Particle brain + coordinate labels
-    │   ├── ProjectsSection.tsx    # Horizontal scroll carousel
-    │   ├── SkillsSection.tsx      # Hover-to-open accordion
-    │   ├── OngoingSection.tsx     # "Currently building" bento grid
+    │   ├── ProjectsSection.tsx    # Scroll-driven horizontal swipe
+    │   ├── SkillsSection.tsx      # 3D skills constellation
+    │   ├── OngoingSection.tsx     # "Currently building" expanding cards
     │   ├── ContactSection.tsx     # Form + social links + footer
     │   ├── Sidebar.tsx            # Vertical section navigation
     │   ├── Robot3D.tsx            # Cursor-tracking 3D robot
@@ -179,7 +181,7 @@ In the Supabase Dashboard → **SQL Editor**, paste and run the entire contents 
 |---|---|
 | `profile` | Name, title, bio, the typed intro lines (`robot_lines`), stat cards (`stats`), contact bubble text |
 | `brain_nodes` | Neural-map labels (`label`, `icon`) and their positions (`x`, `y`, `cx`, `cy`, `dur`) |
-| `projects` | Project cards (title, description, tags, category, status, links, bento metric texts) |
+| `projects` | Project cards (title, description, tags, category, status, links, and the "What it does" highlight texts stored in `bento_texts`) |
 | `skills` | Skill categories, each with an `items` array |
 | `ongoing_projects` | "Currently building" cards with `highlights` |
 | `social_links` | Footer/contact social links (platform, url, handle) |
@@ -208,7 +210,7 @@ Visit **`/admin`** and log in with your Supabase Auth credentials. Tabs:
 
 - **About** — profile fields, the typed intro lines, contact bubble text, stat cards.
 - **Brain Map** — add/edit neural-map nodes, their icon, and `x/y/cx/cy/dur` coordinates (drive label position + connector curve).
-- **Projects** — full CRUD on project cards, tags, links, and the three bento metric texts.
+- **Projects** — full CRUD on project cards, tags, links, and the three "What it does" highlight texts (`bento_texts`).
 - **Skills** — skill categories and items.
 - **Ongoing** — "currently building" cards and highlights.
 - **Contact** — social links.

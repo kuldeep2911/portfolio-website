@@ -49,7 +49,7 @@ export default function Sidebar() {
         onClick={e => { e.preventDefault(); go('hero') }}
         style={{ position: 'fixed', top: 22, left: 24, zIndex: 110, textDecoration: 'none', color: 'var(--ink)', fontFamily: 'var(--mono)', fontWeight: 500, fontSize: 15, letterSpacing: '.18em' }}
       >
-        KK
+        KD
       </a>
 
       <nav
