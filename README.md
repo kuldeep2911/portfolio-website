@@ -2,7 +2,7 @@
 
 A fully content-managed, animated personal portfolio for an AI/ML engineer. It pairs an editorial light-theme design with real-time 3D/particle visuals (Three.js) and a built-in CMS (admin panel) backed by Supabase — so every section's content can be edited live without touching code or redeploying.
 
-- **Live site:** _your Cloudflare URL_ (e.g. `https://kdcodes.pages.dev`)
+- **Live site:** https://kdcodes.pages.dev
 - **Admin CMS:** `/admin` (Supabase Auth login)
 
 ---
